@@ -41,108 +41,106 @@ function $scss(arg: TemplateStringsArray) {
     return arg[0];
 }
 
+let css = $scss`		html {
+    margin: 0;
+    height: 100vh;
+}
+body {
+    margin: 0;
+    height: 100vh;
+}
+.gameroot {
+    height: 100vh;
+    padding: 10px;
+    justify-content: center;
+    display: grid;
+    grid-template-columns: [start] repeat(auto-fill, minmax(0, 300px)) [end];
+    grid-auto-rows: max-content;
+    grid-auto-flow: row;
+}
+.line {
+    margin: 10px;
+    margin-left: 0;
+    margin-right: 0;
+    border-bottom: 3px solid #ccc;
+    border-radius: 1000px;
+    grid-column: 1 / end; /*blink workaround*/
+}
+.spacer {
+    grid-column-end: end;
+}
+.button,
+.counter {
+    margin: 10px;
+    padding: 10px;
+    display: inline-block;
+    border-radius: 10px;
+    color: rgb(200, 200, 200);
+    transition: 0.1s color ease-in-out, 0.1s box-shadow ease-in-out;
+    background-color: white;
+}
+.counter {
+    border: 1px solid rgb(200, 200, 200);
+}
+.button {
+    border: none;
+    box-shadow: 0 0 25px -10px rgba(0, 0, 0, 0.3);
+}
+.button:disabled {
+    opacity: 0.7;
+}
+.button:not(:disabled):hover,
+.button:not(:disabled):focus {
+    box-shadow: 0 0 20px 5px rgba(0, 128, 0, 0.6);
+}
+.button.uncovered:disabled {
+    box-shadow: 0 0 25px -10px rgba(0, 0, 0, 0.3);
+}
+.buyable {
+    color: green;
+}
+.tooexpensive {
+    color: red;
+}
+.counter.uncovered {
+    border: 1px solid black;
+}
+.uncovered {
+    color: black;
+}
+.button.uncovered {
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+.counterheader {
+    font-weight: bold;
+}
+.buttonpurchase {
+    font-weight: bold;
+}
+@keyframes particle {
+    from {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+    to {
+        transform: translate(-50%, -150%);
+        opacity: 0;
+    }
+}
+.particle {
+    z-index: 1000;
+    position: fixed;
+    pointer-events: none;
+    top: var(--y);
+    left: var(--x);
+    color: black;
+    font-size: 16pt;
+    animation: particle 1s;
+    animation-fill-mode: both;
+}`;
+
 document.head.appendChild(
-    el("style", n =>
-        n.appendChild(
-            document.createTextNode($scss`		html {
-				margin: 0;
-				height: 100vh;
-			}
-			body {
-				margin: 0;
-				height: 100vh;
-			}
-			.gameroot {
-				height: 100vh;
-				padding: 10px;
-				justify-content: center;
-				display: grid;
-				grid-template-columns: [start] repeat(auto-fill, minmax(0, 300px)) [end];
-				grid-auto-rows: max-content;
-				grid-auto-flow: row;
-			}
-			.line {
-				margin: 10px;
-				margin-left: 0;
-				margin-right: 0;
-				border-bottom: 3px solid #ccc;
-				border-radius: 1000px;
-				grid-column: 1 / end; /*blink workaround*/
-			}
-			.spacer {
-				grid-column-end: end;
-			}
-			.button,
-			.counter {
-				margin: 10px;
-				padding: 10px;
-				display: inline-block;
-				border-radius: 10px;
-				color: rgb(200, 200, 200);
-				transition: 0.1s color ease-in-out, 0.1s box-shadow ease-in-out;
-				background-color: white;
-			}
-			.counter {
-				border: 1px solid rgb(200, 200, 200);
-			}
-			.button {
-				border: none;
-				box-shadow: 0 0 25px -10px rgba(0, 0, 0, 0.3);
-			}
-			.button:disabled {
-				opacity: 0.7;
-			}
-			.button:not(:disabled):hover,
-			.button:not(:disabled):focus {
-				box-shadow: 0 0 20px 5px rgba(0, 128, 0, 0.6);
-			}
-			.button.uncovered:disabled {
-				box-shadow: 0 0 25px -10px rgba(0, 0, 0, 0.3);
-			}
-			.buyable {
-				color: green;
-			}
-			.tooexpensive {
-				color: red;
-			}
-			.counter.uncovered {
-				border: 1px solid black;
-			}
-			.uncovered {
-				color: black;
-			}
-			.button.uncovered {
-				box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-			}
-			.counterheader {
-				font-weight: bold;
-			}
-			.buttonpurchase {
-				font-weight: bold;
-			}
-			@keyframes particle {
-				from {
-					transform: translate(-50%, -50%);
-					opacity: 1;
-				}
-				to {
-					transform: translate(-50%, -150%);
-					opacity: 0;
-				}
-			}
-			.particle {
-				z-index: 1000;
-				position: fixed;
-				pointer-events: none;
-				top: var(--y);
-				left: var(--x);
-				color: black;
-				font-size: 16pt;
-				animation: particle 1s;
-				animation-fill-mode: both;
-			}`),
-        ),
-    ),
+    el("style", n => n.appendChild(document.createTextNode(css))),
 );
 
 type ObjectMap<T> = { [key: string]: T };
@@ -168,7 +166,7 @@ type Price = ObjectMap<number>;
 type ButtonDetails = {
     price?: Price;
     effects?: Price;
-    requirements?: Price;
+    requires?: Price;
     name: string;
 };
 
@@ -207,9 +205,9 @@ function BuyButton(game: Game, details: ButtonDetails) {
 
     onUncover(() => (buttonText.nodeValue = uncovered ? details.name : "???"));
 
-    let requirements = Object.entries(details.requirements || {});
+    let requires = Object.entries(details.requires || {});
     let justPrice = Object.entries(details.price || {});
-    let price = [...justPrice, ...requirements];
+    let price = [...justPrice, ...requires];
     let justEffects = Object.entries(details.effects || {});
     let effects = [
         ...justEffects,
@@ -225,7 +223,7 @@ function BuyButton(game: Game, details: ButtonDetails) {
     let qqqElem = document.createTextNode("???");
     effectsElem.appendChild(qqqElem);
 
-    for (let [name, cost] of requirements) {
+    for (let [name, cost] of requires) {
         let n = el("span");
         let tn = document.createTextNode("");
         onGameUpdate(() => {
@@ -302,7 +300,7 @@ function BuyButton(game: Game, details: ButtonDetails) {
     });
 
     node.appendChild(button);
-    requirements.length && node.appendChild(reqsElem);
+    requires.length && node.appendChild(reqsElem);
     justPrice.length && node.appendChild(priceElem);
     justEffects.length && node.appendChild(effectsElem);
     return node;
@@ -390,6 +388,27 @@ function Game() {
                     (suffix || "%")
                 );
             }
+            if (displayMode === "numberpercentage") {
+                let resPercent = Math.abs((n * 100) % 100).toFixed(0);
+                let resNumber = Math.floor(Math.abs(n)).toFixed(0);
+
+                let showsZero = resPercent === "0" && resNumber === "0";
+
+                return (
+                    (showSign && Math.sign(n) === 1 && !showsZero
+                        ? "+"
+                        : !showsZero && Math.sign(n) === -1
+                        ? "-"
+                        : "") +
+                    [
+                        resNumber !== "0" ? resNumber + (suffix || "") : "",
+                        resPercent === "0" ? "" : resPercent + "%",
+                        showsZero ? "0" : "",
+                    ]
+                        .filter(m => m)
+                        .join(" and ")
+                );
+            }
 
             /*let nfm = game.settings.numberFormatMode;
 			if (nfm === "log") {
@@ -440,16 +459,10 @@ function Game() {
         apple: {},
         water: {},
         bucket: {},
+        credit: { displaySuffix: "©" },
         _ach_1: { initialValue: 1 },
         _ach_2: { initialValue: 1 },
     };
-    game.counterConfig = counterConfig;
-
-    for (let [key, value] of Object.entries(counterConfig)) {
-        if (game.money[key] == null || isNaN(game.money[key])) {
-            game.money[key] = value.initialValue || 0;
-        }
-    }
 
     // todo fix apples on mac safari
     // todo usages history so if you hoveer over (+0.1) it shows you where it's coming from
@@ -465,7 +478,7 @@ function Game() {
             "button",
             {
                 name: "collect 100 gold",
-                requirements: { gold: 100 },
+                requires: { gold: 100 },
                 price: { _ach_1: 1 },
                 effects: { achievement: 1 },
             },
@@ -489,7 +502,7 @@ function Game() {
                 effects: { gold: 1 },
             },
         ],
-        ["counter", "market", "markets aquire 0.01 gold per tick"],
+        ["counter", "market", "each market adds 0.01 gold per tick"],
         [
             "button",
             {
@@ -512,7 +525,7 @@ function Game() {
             {
                 name: "purchase seed from market",
                 price: { gold: 50 },
-                requirements: { market: 5 },
+                requires: { market: 5 },
                 effects: { seed: 1 },
             },
         ],
@@ -521,7 +534,7 @@ function Game() {
             {
                 name: "take water from wishing well",
                 price: { stamina: 1 },
-                requirements: { market: 5 },
+                requires: { market: 5 },
                 effects: { water: 100 },
             },
         ],
@@ -546,9 +559,16 @@ function Game() {
             "button",
             {
                 name: "sell apples",
-                requirements: { market: 25 },
+                requires: { market: 25 },
                 price: { apple: 100 },
-                effects: { gold: 1000 },
+                effects: { gold: 1000, credit: 1 },
+            },
+        ],
+        ["counter", "credit", "a credit"],
+        [
+            "button",
+            {
+                name: "",
             },
         ],
     ];
@@ -587,6 +607,14 @@ function Game() {
             bal.seed = 0;
         }
     };
+
+    game.counterConfig = counterConfig;
+
+    for (let [key, value] of Object.entries(counterConfig)) {
+        if (game.money[key] == null || isNaN(game.money[key])) {
+            game.money[key] = value.initialValue || 0;
+        }
+    }
 
     let addItem = ([action, ...spec]: GameConfigurationItem) => {
         if (action === "counter") {
