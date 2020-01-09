@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>clicker game</title>
+        <style>
+            html {
+                margin: 0;
+                height: 100vh;
+            }
+            body {
+                margin: 0;
+                height: 100vh;
+            }
+            .gameroot {
+                height: 100vh;
+                padding: 10px;
+                justify-content: center;
+                display: grid;
+                grid-template-columns: [start] repeat(
+                        auto-fill,
+                        minmax(0, 300px)
+                    ) [end];
+                grid-auto-rows: max-content;
+                grid-auto-flow: row;
+            }
+            .line {
+                margin: 10px;
+                margin-left: 0;
+                margin-right: 0;
+                border-bottom: 3px solid #ccc;
+                border-radius: 1000px;
+                grid-column: 1 / end; /*blink workaround*/
+            }
+            .spacer {
+                grid-column-end: end;
+            }
+            .button,
+            .counter {
+                margin: 10px;
+                padding: 10px;
+                display: inline-block;
+                border-radius: 10px;
+                color: rgb(200, 200, 200);
+                transition: 0.1s color ease-in-out, 0.1s box-shadow ease-in-out;
+                background-color: white;
+            }
+            .counter {
+                border: 1px solid rgb(200, 200, 200);
+            }
+            .button {
+                border: none;
+                box-shadow: 0 0 25px -10px rgba(0, 0, 0, 0.3);
+            }
+            .button:disabled {
+                opacity: 0.7;
+            }
+            .button:not(:disabled):hover,
+            .button:not(:disabled):focus {
+                box-shadow: 0 0 20px 5px rgba(0, 128, 0, 0.6);
+            }
+            .button.uncovered:disabled {
+                box-shadow: 0 0 25px -10px rgba(0, 0, 0, 0.3);
+            }
+            .buyable {
+                color: green;
+            }
+            .tooexpensive {
+                color: red;
+            }
+            .counter.uncovered {
+                border: 1px solid black;
+            }
+            .uncovered {
+                color: black;
+            }
+            .button.uncovered {
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            }
+            .counterheader {
+                font-weight: bold;
+            }
+            .buttonpurchase {
+                font-weight: bold;
+            }
+            @keyframes particle {
+                from {
+                    transform: translate(-50%, -50%);
+                    opacity: 1;
+                }
+                to {
+                    transform: translate(-50%, -150%);
+                    opacity: 0;
+                }
+            }
+            .particle {
+                z-index: 1000;
+                position: fixed;
+                pointer-events: none;
+                top: var(--y);
+                left: var(--x);
+                color: black;
+                font-size: 16pt;
+                animation: particle 1s;
+                animation-fill-mode: both;
+            }
+        </style>
+    </head>
+    <body>
+        <script></script>
+    </body>
+</html>
