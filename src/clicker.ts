@@ -60,6 +60,7 @@ html {
     margin: 0;
     height: 100vh;
     touch-action: manipulation;
+    background-color: #542f26;
 }
 body {
     margin: 0;
@@ -91,43 +92,50 @@ body {
     padding: 10px;
     display: inline-block;
     border-radius: 10px;
-    color: rgb(200, 200, 200);
     transition: 0.1s color ease-in-out, 0.1s box-shadow ease-in-out;
-    background-color: white;
     min-height: 100px;
+    border-radius: 0;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background-size: cover;
+    font-family: sans-serif;
+    background-color: transparent;
 }
-.counter {
-    border: 1px solid rgb(200, 200, 200);
+.counter-gold{
+    background-image: url("assets/coin.png");
+    color: white;
+}
+.counter-stamina{
+    background-image: url("assets/stamina.png");
+    color: black;
+}
+.button-wishingwell{
+    background-image: url("assets/wishingwell.png");
+    color: black;
 }
 .button {
     border: none;
-    box-shadow: 0 0 25px -10px rgba(0, 0, 0, 0.3);
+    /* box-shadow: 0 0 25px -10px rgba(0, 0, 0, 0.3); */
 }
 .button:disabled {
     opacity: 0.7;
 }
-.button:not(:disabled):hover,
+/* .button:not(:disabled):hover,
 .button:not(:disabled):focus {
     box-shadow: 0 0 20px 5px rgba(0, 128, 0, 0.6);
 }
 .button.uncovered:disabled {
     box-shadow: 0 0 25px -10px rgba(0, 0, 0, 0.3);
-}
+} */
 .buyable {
     color: green;
 }
 .tooexpensive {
     color: red;
 }
-.counter.uncovered {
-    border: 1px solid black;
-}
-.uncovered {
-    color: black;
-}
-.button.uncovered {
+/* .button.uncovered {
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-}
+} */
 .counterheader {
     font-weight: bold;
 }
@@ -225,6 +233,7 @@ function uniq<T>(item: T): T & { __unique: true } {
 function BuyButton(game: Game, details: ButtonDetails) {
     let node = el("button");
     node.classList.add("button");
+    node.classList.add("button-" + details.id);
     let button = el("div");
     button.classList.add("buttonpurchase");
 
@@ -361,6 +370,7 @@ function BuyButton(game: Game, details: ButtonDetails) {
 function Counter(game: Game, currency: string, description: string) {
     let node = el("div");
     node.classList.add("counter");
+    node.classList.add("counter-" + currency);
 
     let heading = document.createElement("div");
     let p = document.createElement("div");
@@ -550,14 +560,15 @@ function Game() {
             node.appendChild(Counter(game, confit[1], confit[2]));
         } else if (confit[0] === "button") {
             let withID = confit[1] as ButtonDetails;
-            withID.id = uniq(
-                "ingr:" +
-                    JSON.stringify([
-                        withID.requires,
-                        withID.price,
-                        withID.effects,
-                    ]),
-            );
+            if (!withID.id)
+                withID.id = uniq(
+                    "ingr:" +
+                        JSON.stringify([
+                            withID.requires,
+                            withID.price,
+                            withID.effects,
+                        ]),
+                );
             node.appendChild(BuyButton(game, withID));
         } else if (confit[0] === "separator") {
             node.appendChild(el("div", n => n.classList.add("line")));

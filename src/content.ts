@@ -16,6 +16,7 @@ function button(
         price?: Price;
         effects?: Price;
         requires?: Price;
+        id?: string;
     },
 ): GameConfigurationItem {
     return ["button", { name, ...details }];
@@ -60,6 +61,7 @@ const gameContent: GameContent = {
         button("fish gold from wishing well", {
             price: { stamina: 10 },
             effects: { gold: 100 },
+            id: "wishingwell",
         }),
         counter("market", "each market adds 0.01 gold per tick"),
         button("purchase market", {
