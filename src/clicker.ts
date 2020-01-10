@@ -501,7 +501,7 @@ function Game() {
         achievement: { displayMode: "integer" },
         apple: { displayMode: "integer" },
         water: { displayMode: "decimal" },
-        bucket: { displayMode: "decimal" },
+        bucket: { displayMode: "integer" },
         credit: { displaySuffix: "©", displayMode: "integer" },
         _ach_1: { initialValue: 1, displayMode: "boolean" },
         _ach_2: { initialValue: 1, displayMode: "boolean" },
@@ -587,14 +587,14 @@ function Game() {
             {
                 name: "make bucket",
                 price: { tree: 1_00, gold: 100_00 },
-                effects: { bucket: 1_00 },
+                effects: { bucket: 1 },
             },
         ],
         [
             "button",
             {
                 name: "use bucket on wishing well",
-                price: { bucket: 1_00, stamina: 1_00 },
+                price: { bucket: 1, stamina: 1_00 },
                 effects: { water: 10_00, gold: 10_00 },
             },
         ],
