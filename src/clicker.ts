@@ -366,14 +366,13 @@ function Counter(game: Game, currency: string, description: string) {
             prevItem = item;
         }
         average /= history.length - 1;
+        average = Math.round(average);
 
         tn.nodeValue =
             currency +
             ": " +
             game.numberFormat(currency, count, false) +
-            (average
-                ? " (" + game.numberFormat(currency, Math.round(average)) + ")"
-                : "");
+            (average ? " (" + game.numberFormat(currency, average) + ")" : "");
     });
 
     heading.appendChild(tn);
@@ -386,8 +385,8 @@ function Counter(game: Game, currency: string, description: string) {
 function splitNumber(number: number): { decimal: number; integer: number } {
     let numberString = number.toLocaleString("en-US", { useGrouping: false });
     let fullDecimal = numberString.slice(-2).replace("-", "");
-    let fullInteger = numberString.slice(0, -2);
-    return { decimal: +fullDecimal, integer: +fullInteger };
+    let fullInteger = numberString.slice(0, -2).replace("-", "");
+    return { decimal: +fullDecimal, integer: +fullInteger * Math.sign(number) };
 }
 
 function Game() {
@@ -410,10 +409,10 @@ function Game() {
             let suffix = currencyDetails.displaySuffix || "";
 
             if (displayMode === "percentage") {
-                let resStr = (Number(n) / 100).toLocaleString(undefined, {
+                let resStr = (n / 100).toLocaleString(undefined, {
                     style: "percent",
                 });
-                let sign = resStr[0] === "-" ? -1 : resStr === "0" ? 0 : 1;
+                let sign = Math.sign(n);
 
                 return (
                     (showSign && sign === 1 ? "+" : "") +
@@ -429,10 +428,12 @@ function Game() {
                         style: "percent",
                     },
                 );
-                let resNumber = split.integer.toLocaleString(undefined);
+                let resNumber = Math.abs(split.integer).toLocaleString(
+                    undefined,
+                );
 
                 let showsZero = n === 0;
-                let sign = resPercent[0] === "-" ? -1 : showsZero ? 0 : 1;
+                let sign = Math.sign(n);
 
                 return (
                     (showSign && sign === 1 ? "+" : sign === -1 ? "-" : "") +
@@ -645,10 +646,14 @@ function Game() {
         if (bal.seed > 0) {
             game.uncoveredCounters.tree = true;
             game.uncoveredCounters.apple = true;
-            if (bal.water > 1) {
-                bal.seed -= 1;
-                bal.tree += 1;
-                bal.water -= 1;
+
+            let availableWater = bal.water;
+            let availableSeed = bal.seed;
+            let used = Math.min(availableWater, Math.ceil(availableSeed / 100));
+            if (used >= 1) {
+                bal.seed -= used;
+                bal.tree += used;
+                bal.water -= used;
             }
         } else {
             bal.seed = 0;
