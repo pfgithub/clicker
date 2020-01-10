@@ -165,11 +165,13 @@ type DisplayMode =
     | "decimal"
     | "integer"
     | "boolean"
-    | "hidden";
+    | "hidden"
+    | "integernocomma";
 type ObjectMap<T> = { [key: string]: T };
 type CounterConfigurationItem = {
     displayMode: DisplayMode;
     displaySuffix?: string;
+    displayPrefix?: string;
     initialValue?: number;
 };
 type CounterConfig = ObjectMap<CounterConfigurationItem>;
@@ -407,6 +409,7 @@ function Game() {
 
             let displayMode = currencyDetails.displayMode;
             let suffix = currencyDetails.displaySuffix || "";
+            let prefix = currencyDetails.displayPrefix || "";
 
             if (displayMode === "percentage") {
                 let resStr = (n / 100).toLocaleString(undefined, {
@@ -460,6 +463,16 @@ function Game() {
                 let resV = n.toLocaleString(undefined, {});
                 return (
                     (showSign && Math.sign(+resV) === 1 ? "+" : "") +
+                    prefix +
+                    resV +
+                    suffix
+                );
+            }
+            if (displayMode === "integernocomma") {
+                let resV = n.toLocaleString(undefined, { useGrouping: false });
+                return (
+                    (showSign && Math.sign(+resV) === 1 ? "+" : "") +
+                    prefix +
                     resV +
                     suffix
                 );
@@ -503,9 +516,10 @@ function Game() {
         apple: { displayMode: "integer" },
         water: { displayMode: "decimal" },
         bucket: { displayMode: "integer" },
-        credit: { displaySuffix: "©", displayMode: "integer" },
+        credit: { displayPrefix: "©", displayMode: "integernocomma" },
         _ach_1: { initialValue: 1, displayMode: "boolean" },
         _ach_2: { initialValue: 1, displayMode: "boolean" },
+        _ach_3: { initialValue: 1, displayMode: "boolean" },
     };
 
     // todo fix apples on mac safari
@@ -532,6 +546,15 @@ function Game() {
             {
                 name: "eat apple",
                 price: { apple: 1_00, _ach_2: 1 },
+                effects: { achievement: 1 },
+            },
+        ],
+        [
+            "button",
+            {
+                name: "this game",
+                requires: { credit: 2020 },
+                price: { _ach_3: 1 },
                 effects: { achievement: 1 },
             },
         ],
