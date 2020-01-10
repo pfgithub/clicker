@@ -188,12 +188,31 @@ type Game = {
     ) => string;
 };
 type Price = ObjectMap<number>;
-type ButtonDetails = {
+type ManualButtonDetails = {
     price?: Price;
     effects?: Price;
     requires?: Price;
     name: string;
 };
+type ButtonDetails = ManualButtonDetails & {
+    id: string & { __unique: true };
+};
+type GameConfigurationItem =
+    | ["counter", string, string]
+    | ["button", ManualButtonDetails]
+    | ["separator"]
+    | ["spacer"];
+
+let uniqMap = new Map<any, boolean>();
+function uniq<T>(item: T): T & { __unique: true } {
+    if (uniqMap.has(item)) {
+        console.log("Not unique", item);
+        alert("Not unique: " + item);
+        throw new Error("Not unique: " + item);
+    }
+    uniqMap.set(item, true);
+    return item as T & { __unique: true };
+}
 
 function BuyButton(game: Game, details: ButtonDetails) {
     let node = el("button");
@@ -494,7 +513,8 @@ function Game() {
         try {
             parsed = JSON.parse(savedGame);
         } catch (e) {
-            console.log("Error loading savegame:", e);
+            localStorage.setItem("corrupted_save", savedGame);
+            console.log("Error loading savegame:", e, savedGame);
         }
         if (parsed) {
             game.money = { ...game.money, ...parsed.money };
@@ -525,11 +545,6 @@ function Game() {
     // todo fix apples on mac safari
     // todo usages history so if you hoveer over (+0.1) it shows you where it's coming from
 
-    type GameConfigurationItem =
-        | ["counter", string, string]
-        | ["button", ButtonDetails]
-        | ["separator"]
-        | ["spacer"];
     let gameConfig: GameConfigurationItem[] = [
         ["counter", "achievement", "number of achievements you have recieved"],
         [
@@ -691,17 +706,26 @@ function Game() {
         }
     }
 
-    let addItem = ([action, ...spec]: GameConfigurationItem) => {
-        if (action === "counter") {
-            node.appendChild(Counter(game, ...(spec as [string, string])));
-        } else if (action === "button") {
-            node.appendChild(BuyButton(game, ...(spec as [ButtonDetails])));
-        } else if (action === "separator") {
+    let addItem = (confit: GameConfigurationItem) => {
+        if (confit[0] === "counter") {
+            node.appendChild(Counter(game, confit[1], confit[2]));
+        } else if (confit[0] === "button") {
+            let withID = confit[1] as ButtonDetails;
+            withID.id = uniq(
+                "ingr:" +
+                    JSON.stringify([
+                        withID.requires,
+                        withID.price,
+                        withID.effects,
+                    ]),
+            );
+            node.appendChild(BuyButton(game, withID));
+        } else if (confit[0] === "separator") {
             node.appendChild(el("div", n => n.classList.add("line")));
-        } else if (action === "spacer") {
+        } else if (confit[0] === "spacer") {
             node.appendChild(el("div", n => n.classList.add("spacer")));
         } else {
-            node.appendChild(document.createTextNode("error: " + action));
+            node.appendChild(document.createTextNode("error: " + confit[0]));
         }
     };
 
@@ -727,7 +751,6 @@ function Game() {
 
         if (game.tick % 50 === 0) {
             let newSaveID = +localStorage.getItem("lastsave")!;
-            console.log(saveID, newSaveID);
             if (newSaveID !== saveID) {
                 document.body.innerHTML =
                     "Uh oh! This page was opened on another tab. This page has been closed to prevent save conflicts.";
