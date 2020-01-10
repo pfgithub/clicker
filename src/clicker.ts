@@ -1,5 +1,17 @@
 type CB = () => void;
 
+export {};
+declare global {
+    interface Window {
+        game: {
+            cheat: {
+                money: ObjectMap<number>;
+            };
+            restart: () => void;
+        };
+    }
+}
+
 let gameUpdateHandlers: CB[] = [];
 let tickHandlers: CB[] = [];
 
@@ -41,9 +53,11 @@ function $scss(arg: TemplateStringsArray) {
     return arg[0];
 }
 
-let css = $scss`		html {
+let css = $scss`
+html {
     margin: 0;
     height: 100vh;
+    touch-action: manipulation;
 }
 body {
     margin: 0;
@@ -78,6 +92,7 @@ body {
     color: rgb(200, 200, 200);
     transition: 0.1s color ease-in-out, 0.1s box-shadow ease-in-out;
     background-color: white;
+    min-height: 100px;
 }
 .counter {
     border: 1px solid rgb(200, 200, 200);
@@ -137,15 +152,23 @@ body {
     font-size: 16pt;
     animation: particle 1s;
     animation-fill-mode: both;
-}`;
+}
+`;
 
 document.head.appendChild(
     el("style", n => n.appendChild(document.createTextNode(css))),
 );
 
+type DisplayMode =
+    | "percentage"
+    | "numberpercentage"
+    | "decimal"
+    | "integer"
+    | "boolean"
+    | "hidden";
 type ObjectMap<T> = { [key: string]: T };
 type CounterConfigurationItem = {
-    displayMode?: string;
+    displayMode: DisplayMode;
     displaySuffix?: string;
     initialValue?: number;
 };
@@ -338,7 +361,7 @@ function Counter(game: Game, currency: string, description: string) {
         let prevItem;
         for (let item of history) {
             if (prevItem !== undefined) {
-                average += item - prevItem;
+                average += Number(item - prevItem);
             }
             prevItem = item;
         }
@@ -348,7 +371,9 @@ function Counter(game: Game, currency: string, description: string) {
             currency +
             ": " +
             game.numberFormat(currency, count, false) +
-            (average ? " (" + game.numberFormat(currency, average) + ")" : "");
+            (average
+                ? " (" + game.numberFormat(currency, Math.round(average)) + ")"
+                : "");
     });
 
     heading.appendChild(tn);
@@ -356,6 +381,13 @@ function Counter(game: Game, currency: string, description: string) {
     description && node.appendChild(p);
 
     return node;
+}
+
+function splitNumber(number: number): { decimal: number; integer: number } {
+    let numberString = number.toLocaleString("en-US", { useGrouping: false });
+    let fullDecimal = numberString.slice(-2).replace("-", "");
+    let fullInteger = numberString.slice(0, -2);
+    return { decimal: +fullDecimal, integer: +fullInteger };
 }
 
 function Game() {
@@ -374,61 +406,71 @@ function Game() {
         numberFormat: (currency, n, showSign = true) => {
             let currencyDetails = game.counterConfig[currency] || {};
 
-            let displayMode = currencyDetails.displayMode || "default";
+            let displayMode = currencyDetails.displayMode;
             let suffix = currencyDetails.displaySuffix || "";
 
             if (displayMode === "percentage") {
-                let resStr = (n * 100).toFixed(0);
+                let resStr = (Number(n) / 100).toLocaleString(undefined, {
+                    style: "percent",
+                });
+                let sign = resStr[0] === "-" ? -1 : resStr === "0" ? 0 : 1;
 
                 return (
-                    (showSign && Math.sign(n) === 1 && resStr !== "0"
-                        ? "+"
-                        : "") +
+                    (showSign && sign === 1 ? "+" : "") +
                     resStr +
-                    (suffix || "%")
+                    (suffix || "")
                 );
             }
             if (displayMode === "numberpercentage") {
-                let resPercent = Math.abs((n * 100) % 100).toFixed(0);
-                let resNumber = Math.floor(Math.abs(n)).toFixed(0);
+                let split = splitNumber(n);
+                let resPercent = (split.decimal / 100).toLocaleString(
+                    undefined,
+                    {
+                        style: "percent",
+                    },
+                );
+                let resNumber = split.integer.toLocaleString(undefined);
 
-                let showsZero = resPercent === "0" && resNumber === "0";
+                let showsZero = n === 0;
+                let sign = resPercent[0] === "-" ? -1 : showsZero ? 0 : 1;
 
                 return (
-                    (showSign && Math.sign(n) === 1 && !showsZero
-                        ? "+"
-                        : !showsZero && Math.sign(n) === -1
-                        ? "-"
-                        : "") +
+                    (showSign && sign === 1 ? "+" : sign === -1 ? "-" : "") +
                     [
-                        resNumber !== "0" ? resNumber + (suffix || "") : "",
-                        resPercent === "0" ? "" : resPercent + "%",
+                        split.integer !== 0 ? resNumber + (suffix || "") : "",
+                        split.decimal === 0 ? "" : resPercent,
                         showsZero ? "0" : "",
                     ]
                         .filter(m => m)
                         .join(" and ")
                 );
             }
-
-            /*let nfm = game.settings.numberFormatMode;
-			if (nfm === "log") {
-				let p = "";
-				if (n < 0) {
-					n = -n;
-					p = "[-]";
-				}
-				n = Math.log10(n) + 1;
-				if (n === -Infinity) return (showSign ? "+" : "") + "None";
-				return p + n.toFixed(2);
-			} else if (nfm === "hex") {
-				return n.toString(16);
-			}*/
-            let resV = n.toFixed(2);
-            if (resV === "-0.00") resV = "0.00";
-            resV = resV.replace(/\.?0*$/, "");
-            return (
-                (showSign && Math.sign(+resV) === 1 ? "+" : "") + resV + suffix
-            );
+            if (displayMode === "decimal") {
+                let resV = (n / 100).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                });
+                return (
+                    (showSign && Math.sign(+resV) === 1 ? "+" : "") +
+                    resV +
+                    suffix
+                );
+            }
+            if (displayMode === "integer") {
+                let resV = n.toLocaleString(undefined, {});
+                return (
+                    (showSign && Math.sign(+resV) === 1 ? "+" : "") +
+                    resV +
+                    suffix
+                );
+            }
+            if (displayMode === "boolean") {
+                return n === 0 ? "0" : "1";
+            }
+            if (displayMode === "hidden") {
+                return "Oops! You should never see this!";
+            }
+            alert("invalid display mode: " + displayMode);
+            throw "invalid display mode: " + displayMode;
         },
     };
 
@@ -450,18 +492,19 @@ function Game() {
     }
 
     let counterConfig: CounterConfig = {
+        tick: { displayMode: "hidden" },
         stamina: { displayMode: "percentage" }, // 100%, 50%
         tree: { displayMode: "numberpercentage" }, // 1
         seed: { displayMode: "numberpercentage" }, // 2 and 10%
-        gold: { displayMode: "twodecimal", displaySuffix: "ᵹ" }, // 1.00, 2.50
-        market: {},
-        achievement: {},
-        apple: {},
-        water: {},
-        bucket: {},
-        credit: { displaySuffix: "©" },
-        _ach_1: { initialValue: 1 },
-        _ach_2: { initialValue: 1 },
+        gold: { displayMode: "decimal", displaySuffix: "ᵹ" }, // 1.00, 2.50
+        market: { displayMode: "integer" },
+        achievement: { displayMode: "integer" },
+        apple: { displayMode: "integer" },
+        water: { displayMode: "decimal" },
+        bucket: { displayMode: "decimal" },
+        credit: { displaySuffix: "©", displayMode: "integer" },
+        _ach_1: { initialValue: 1, displayMode: "boolean" },
+        _ach_2: { initialValue: 1, displayMode: "boolean" },
     };
 
     // todo fix apples on mac safari
@@ -478,7 +521,7 @@ function Game() {
             "button",
             {
                 name: "collect 100 gold",
-                requires: { gold: 100 },
+                requires: { gold: 100_00 },
                 price: { _ach_1: 1 },
                 effects: { achievement: 1 },
             },
@@ -487,7 +530,7 @@ function Game() {
             "button",
             {
                 name: "eat apple",
-                price: { apple: 1, _ach_2: 1 },
+                price: { apple: 1_00, _ach_2: 1 },
                 effects: { achievement: 1 },
             },
         ],
@@ -498,8 +541,8 @@ function Game() {
             "button",
             {
                 name: "fish gold from wishing well",
-                price: { stamina: 0.1 },
-                effects: { gold: 1 },
+                price: { stamina: 10 },
+                effects: { gold: 100 },
             },
         ],
         ["counter", "market", "each market adds 0.01 gold per tick"],
@@ -507,7 +550,7 @@ function Game() {
             "button",
             {
                 name: "purchase market",
-                price: { gold: 25 },
+                price: { gold: 25_00 },
                 effects: { market: 1 },
             },
         ],
@@ -524,18 +567,18 @@ function Game() {
             "button",
             {
                 name: "purchase seed from market",
-                price: { gold: 50 },
+                price: { gold: 50_00 },
                 requires: { market: 5 },
-                effects: { seed: 1 },
+                effects: { seed: 1_00 },
             },
         ],
         [
             "button",
             {
                 name: "take water from wishing well",
-                price: { stamina: 1 },
+                price: { stamina: 1_00 },
                 requires: { market: 5 },
-                effects: { water: 100 },
+                effects: { water: 1_00 },
             },
         ],
         ["counter", "bucket", "a bucket"],
@@ -543,16 +586,16 @@ function Game() {
             "button",
             {
                 name: "make bucket",
-                price: { tree: 1, gold: 100 },
-                effects: { bucket: 1 },
+                price: { tree: 1_00, gold: 100_00 },
+                effects: { bucket: 1_00 },
             },
         ],
         [
             "button",
             {
                 name: "use bucket on wishing well",
-                price: { bucket: 1, stamina: 1 },
-                effects: { water: 1000, gold: 10 },
+                price: { bucket: 1_00, stamina: 1_00 },
+                effects: { water: 10_00, gold: 10_00 },
             },
         ],
         [
@@ -561,7 +604,7 @@ function Game() {
                 name: "sell apples",
                 requires: { market: 25 },
                 price: { apple: 100 },
-                effects: { gold: 1000, credit: 1 },
+                effects: { gold: 1000_00, credit: 1 },
             },
         ],
         ["counter", "credit", "a credit"],
@@ -576,31 +619,35 @@ function Game() {
     let gameLogic = () => {
         // logic
         game.money.tick++;
-        game.money.gold += game.money.market * 0.01;
-        if (game.money.stamina < 1) game.money.stamina += 0.01;
+        game.money.gold += game.money.market;
+        if (game.money.stamina < 100) game.money.stamina += 1;
+        if (game.money.stamina > 100) game.money.stamina = 100;
 
         let bal = game.money;
         if (bal.tree < 0) bal.tree = 0;
         let treeWaterCost = 2;
-        let liveTreeCount = Math.floor(bal.tree);
+        let tsplit = splitNumber(bal.tree);
+        let liveTreeCount = tsplit.integer;
         let requiredWater = liveTreeCount;
-        let availableWater = Math.floor(bal.water / treeWaterCost);
+        let availableWater = bal.water / treeWaterCost;
         if (bal.tick % 10 === 0) bal.apple += liveTreeCount;
         let deadTrees = requiredWater - availableWater;
         if (deadTrees > 0) {
-            bal.tree -= 0.02 * deadTrees;
+            bal.tree -= 2 * deadTrees;
         }
         if (bal.water < 2 && deadTrees <= 0 && bal.tree > 0) {
-            bal.tree -= 0.01;
+            bal.tree -= 1;
         }
-        bal.water -= Math.min(requiredWater, availableWater) * treeWaterCost;
+        bal.water -=
+            (availableWater < requiredWater ? availableWater : requiredWater) *
+            treeWaterCost;
 
         if (bal.seed > 0) {
             game.uncoveredCounters.tree = true;
             game.uncoveredCounters.apple = true;
             if (bal.water > 1) {
-                bal.seed -= 0.01;
-                bal.tree += 0.01;
+                bal.seed -= 1;
+                bal.tree += 1;
                 bal.water -= 1;
             }
         } else {
@@ -634,6 +681,16 @@ function Game() {
         addItem(spec);
     }
 
+    window.game = {
+        cheat: { money: game.money },
+        restart: () => {
+            localStorage.clear();
+            clearInterval(tickInterval);
+            console.log("Reloading...");
+            location.reload();
+        },
+    };
+
     tickHandlers.push(() => {
         game.tick++;
 
@@ -664,10 +721,23 @@ function Game() {
             );
         }
 
+        for (let [currency, count] of Object.entries(game.money)) {
+            if (!Number.isInteger(count)) {
+                alert(
+                    "Currency is not an integer, " +
+                        currency +
+                        " (value is " +
+                        count +
+                        ")",
+                );
+                game.money[currency] = Math.floor(count);
+            }
+        }
+
         gameLogic();
     });
 
     return node;
 }
 
-document.body.appendChild(Game());
+main.appendChild(Game());
