@@ -58,15 +58,12 @@ function $scss(arg: TemplateStringsArray) {
 let css = $scss`
 html {
     margin: 0;
-    height: 100vh;
     touch-action: manipulation;
 }
 body {
     margin: 0;
-    height: 100vh;
 }
 .gameroot {
-    height: 100vh;
     padding: 10px;
     justify-content: center;
     display: grid;
