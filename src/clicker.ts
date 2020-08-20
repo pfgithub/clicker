@@ -257,13 +257,14 @@ function BuyButton(game: Game, details: ButtonDetails) {
     return html`
         <div>price: ${justPrice.map(([name, cost]) => {
         return html`
-            <span class=${game.money[name] >= cost ? "buyable" : "toexpensive"}>
+            <span class=${game.money[name] >= cost ? "buyable" : "tooexpensive"}>
                 (${game.numberFormat(name, cost, false)} ${game.uncoveredCounters[name] ? name : "???"})
             </span>`;
         })}</div>
     `};
     let effectsDisplay = () => {
         if(justEffects.length === 0) return "";
+        if(!isUncovered) return html`<div>effects: ???</div>`;
     return html`
         <div>effects: ${justEffects.map(([name, cost]) => {
         return html`
@@ -279,6 +280,12 @@ function BuyButton(game: Game, details: ButtonDetails) {
         for (let [key, value] of effects) {
             game.money[key] += value;
         }
+        
+        if(isUncovered) {
+            for (let [name] of justEffects) {
+                game.uncoveredCounters[name] = true;
+            }
+        }
 
         if(e.clientX) spawnParticle(e.clientX, e.clientY, "+");
         // else spawn particle in the center
@@ -290,11 +297,9 @@ return html`
         <div class="buttonpurchase">
             ${isUncovered ? details.name : "???"}
         </div>
-        ${isUncovered ? html`
-            ${requiresDisplay()}
-            ${priceDisplay()}
-            ${effectsDisplay()}
-        ` : "???"}
+        ${requiresDisplay()}
+        ${priceDisplay()}
+        ${effectsDisplay()}
     </button>
 `;
 }
