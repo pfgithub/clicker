@@ -22,6 +22,8 @@ module.exports = {
                         "@babel/plugin-transform-react-jsx",
                         "@babel/plugin-syntax-bigint",
                         "@babel/plugin-proposal-numeric-separator",
+                        "@babel/plugin-proposal-nullish-coalescing-operator",
+                        "@babel/plugin-proposal-logical-assignment-operators",
                     ],
                 },
             },

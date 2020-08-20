@@ -206,12 +206,10 @@ function uniq<T>(item: T): T & { __unique: true } {
 
 let descCache: {[key: string]: μhtml.Hole} = {};
 function parseDesc(game: Game, desc: string) {
-    if(!descCache[desc]) {
-        descCache[desc] = html`${desc.replace(/{(.+?)\|(.+?)}/g, (_, b, c) => {
-            const number = +c.split("_").join("");
-            return game.numberFormat(b, number, false);
-        })} `;
-    }
+    descCache[desc] ??= html`${desc.replace(/{(.+?)\|(.+?)}/g, (_, b, c) => {
+        const number = +c.split("_").join("");
+        return game.numberFormat(b, number, false);
+    })} `;
     return descCache[desc];
 }
 
@@ -257,14 +255,13 @@ function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
     `};
     let effectsDisplay = () => {
         if(justEffects.length === 0) return "";
-        if(!isUncovered) return html`<div>effects: ???</div>`;
     return html`
-        <div>effects: ${justEffects.map(([name, cost]) => {
+        <div>effects: ${isUncovered ? justEffects.map(([name, cost]) => {
         return html`
             <span>
                 (${game.numberFormat(name, cost)} ${game.uncoveredCounters[name] ? name : "???"})
             </span>`;
-        })}</div>
+        }) : "???"}</div>
     `};
     
     const purchasable = checkPrice();
@@ -561,12 +558,9 @@ function Game() {
 
         for (let [currency, count] of Object.entries(game.money)) {
             if (!Number.isInteger(count)) {
-                alert(
-                    "Currency is not an integer, " +
-                        currency +
-                        " (value is " +
-                        count +
-                        ")",
+                alert("Currency is not an integer, " +
+                    currency + " (value is " + count +
+                    ")",
                 );
                 game.money[currency] = Math.floor(count);
             }
