@@ -315,7 +315,7 @@ return html`
 function Counter(game: Game, currency: string, description: string) {
     const isRevealed = game.uncoveredCounters[currency];
     
-    let displayTitle = "???";
+    let displayTitle = html`???`;
     let displayDescription = "This counter has not been discovered yet.";
     if (isRevealed) {
         displayDescription = description;
@@ -333,9 +333,7 @@ function Counter(game: Game, currency: string, description: string) {
         average /= history.length - 1;
         average = Math.round(average);
         
-        displayTitle = currency + ": " +
-            game.numberFormat(currency, count, false) +
-            (average ? " (" + game.numberFormat(currency, average) + ")" : "");
+        displayTitle = html`${currency}: ${game.numberFormat(currency, count, false)}${average?html`&nbsp;(${game.numberFormat(currency, average)})`:""}`;
     }
 return html`
     <div class=${`counter `+(isRevealed ? "uncovered" : "")}>
