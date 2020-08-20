@@ -231,7 +231,6 @@ function BuyButton(game: Game, details: ButtonDetails) {
         return false;
     };
     
-    
     let requires = Object.entries(details.requires || {});
     let justPrice = Object.entries(details.price || {});
     let price = [...justPrice, ...requires];
@@ -342,8 +341,8 @@ export function splitNumber(
 }
 
 function Game() {
-    let node = el("div");
-    node.classList.add("gameroot");
+    let gameroot = el("div");
+    gameroot.classList.add("gameroot");
 
     let saveID = +(localStorage.getItem("lastsave") || "0") + 1;
     localStorage.setItem("lastsave", "" + saveID);
@@ -466,14 +465,23 @@ function Game() {
         }
     }
 
-    let addItem = (confit: GameConfigurationItem) => {
+    let renderItem = (confit: GameConfigurationItem) => {
         if (confit[0] === "counter") {
-            let n = document.createElement("div");
-            node.appendChild(n);
-            let rerender = () => μhtml.render(n, Counter(game, confit[1], confit[2]));
-            tickHandlers.push(() => rerender());
+            return Counter(game, confit[1], confit[2]);
         } else if (confit[0] === "button") {
             let withID = confit[1] as ButtonDetails;
+            return BuyButton(game, withID);
+        } else if (confit[0] === "separator") {
+            return html`<div class="line"></div>`;
+        } else if (confit[0] === "spacer") {
+            return html`<div class="spacer"></div>`;
+        }
+        return html`<div>error: ${confit[0]}</div>`;
+    };
+
+    gameConfig.forEach(gcfgitm => {
+        if(gcfgitm[0] === "button") {
+            let withID = gcfgitm[1] as ButtonDetails;
             withID.id = uniq(
                 "ingr:" +
                     JSON.stringify([
@@ -482,23 +490,15 @@ function Game() {
                         withID.effects,
                     ]),
             );
-            
-            let n = document.createElement("div");
-            node.appendChild(n);
-            let rerender = () => μhtml.render(n, BuyButton(game, withID));
-            tickHandlers.push(() => rerender());
-        } else if (confit[0] === "separator") {
-            node.appendChild(el("div", n => n.classList.add("line")));
-        } else if (confit[0] === "spacer") {
-            node.appendChild(el("div", n => n.classList.add("spacer")));
-        } else {
-            node.appendChild(document.createTextNode("error: " + confit[0]));
         }
-    };
+    });
 
-    for (let spec of gameConfig) {
-        addItem(spec);
-    }
+    let render = () => html`${
+        gameConfig.map(cfgitm => html.for(cfgitm)`${renderItem(cfgitm)}`)
+    } `;
+
+    let rerender = () => μhtml.render(gameroot, render());
+    tickHandlers.push(() => rerender());
 
     window.game = {
         cheat: { money: game.money },
@@ -555,7 +555,7 @@ function Game() {
         gameLogic(game);
     });
 
-    return node;
+    return gameroot;
 }
 
 main.appendChild(Game());
