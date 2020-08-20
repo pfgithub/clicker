@@ -225,7 +225,7 @@ function uniq<T>(item: T): T & { __unique: true } {
 function BuyButton(game: Game, details: ButtonDetails) {
     let checkPrice = () => price.every(([k, v]) => game.money[k] >= v);
     let getUncovered = () => {
-        if (price.every(([k, v]) => k.startsWith("_") ? true : game.money[k] >= v)) {
+        if (price.every(([k]) => k.startsWith("_") ? true : game.uncoveredCounters[k])) {
             return true;
         }
         return false;
