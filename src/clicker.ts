@@ -359,50 +359,36 @@ function BuyButton(game: Game, details: ButtonDetails) {
 }
 
 function Counter(game: Game, currency: string, description: string) {
-    let node = el("div");
-    node.classList.add("counter");
+    const isRevealed = game.uncoveredCounters[currency];
     
-    let isRevealed = false;
-    let update = () => {
-        let displayDescription = "This counter has not been discovered yet.";
-        if (!isRevealed && game.uncoveredCounters[currency]) {
-            displayDescription = description;
-            node.classList.add("uncovered");
-            isRevealed = true;
-        }
+    let displayTitle = "???";
+    let displayDescription = "This counter has not been discovered yet.";
+    if (isRevealed) {
+        displayDescription = description;
         
-        let displayTitle = "???";
-        if (isRevealed) {
-            let count = game.money[currency];
-            let history = [...game.moneyHistory.map(h => h[currency]), count];
-            let average = 0;
-            let prevItem;
-            for (let item of history) {
-                if (prevItem !== undefined) {
-                    average += Number(item - prevItem);
-                }
-                prevItem = item;
+        let count = game.money[currency];
+        let history = [...game.moneyHistory.map(h => h[currency]), count];
+        let average = 0;
+        let prevItem;
+        for (let item of history) {
+            if (prevItem !== undefined) {
+                average += Number(item - prevItem);
             }
-            average /= history.length - 1;
-            average = Math.round(average);
-            
-            displayTitle = currency + ": " +
-                game.numberFormat(currency, count, false) +
-                (average ? " (" + game.numberFormat(currency, average) + ")" : "");
+            prevItem = item;
         }
-    return html`
+        average /= history.length - 1;
+        average = Math.round(average);
+        
+        displayTitle = currency + ": " +
+            game.numberFormat(currency, count, false) +
+            (average ? " (" + game.numberFormat(currency, average) + ")" : "");
+    }
+return html`
+    <div class=${`counter `+(isRevealed ? "uncovered" : "")}>
         <div class="counterheader">${displayTitle}</div>
         <div class="counterdescription">${displayDescription}</div>
-    `};
-    let rerender = () => μhtml.render(node, update());
-    rerender();
-
-    onGameUpdate(() => {
-        rerender();
-    });
-
-    return node;
-}
+    </div>
+`}
 
 export function splitNumber(
     number: number,
@@ -540,7 +526,10 @@ function Game() {
 
     let addItem = (confit: GameConfigurationItem) => {
         if (confit[0] === "counter") {
-            node.appendChild(Counter(game, confit[1], confit[2]));
+            let n = document.createElement("div");
+            node.appendChild(n);
+            let rerender = () => μhtml.render(n, Counter(game, confit[1], confit[2]));
+            tickHandlers.push(() => rerender());
         } else if (confit[0] === "button") {
             let withID = confit[1] as ButtonDetails;
             withID.id = uniq(
