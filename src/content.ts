@@ -176,7 +176,7 @@ const gameContent: GameContent = {
             bal.seed = 0;
         }
         
-        if(bal.merchant >= 1 && bal.tick % 10 == 0) {
+        if(bal.merchant >= 1 && bal.tick % 10 == 5) {
             const buycount = Math.min(Math.floor(bal.apple / 80), bal.merchant);
             bal.apple -= buycount * 80;
             bal.credit += buycount * 1;
