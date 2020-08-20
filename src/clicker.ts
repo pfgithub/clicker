@@ -222,6 +222,17 @@ function uniq<T>(item: T): T & { __unique: true } {
     return item as T & { __unique: true };
 }
 
+let descCache: {[key: string]: μhtml.Hole} = {};
+function parseDesc(game: Game, desc: string) {
+    if(!descCache[desc]) {
+        descCache[desc] = html`${desc.replace(/{(.+?)\|(.+?)}/g, (_, b, c) => {
+            const number = +c.split("_").join("");
+            return game.numberFormat(b, number, false);
+        })} `;
+    }
+    return descCache[desc];
+}
+
 function BuyButton(game: Game, details: ButtonDetails) {
     let checkPrice = () => price.every(([k, v]) => game.money[k] >= v);
     let getUncovered = () => {
@@ -316,9 +327,9 @@ function Counter(game: Game, currency: string, description: string) {
     const isRevealed = game.uncoveredCounters[currency];
     
     let displayTitle = html`???`;
-    let displayDescription = "This counter has not been discovered yet.";
+    let displayDescription = html`This counter has not been discovered yet.`;
     if (isRevealed) {
-        displayDescription = description;
+        displayDescription = parseDesc(game, description);
         
         let count = game.money[currency];
         let history = [...game.moneyHistory.map(h => h[currency]), count];
