@@ -1,7 +1,7 @@
 import { counterConfig, gameConfig, gameLogic } from "./content";
 import * as μhtml from "uhtml";
 
-const {html, _svg} = μhtml;
+const {html} = μhtml;
 
 export type CB = () => void;
 
