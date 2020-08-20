@@ -245,7 +245,7 @@ function BuyButton(game: Game, details: ButtonDetails) {
     let requiresDisplay = () => {
         if(requires.length === 0) return "";
     return html`
-        <div>${requires.map(([name, cost]) => {
+        <div>requires: ${requires.map(([name, cost]) => {
         return html`
             <span class=${game.money[name] >= cost ? "buyable" : "toexpensive"}>
                 (${game.numberFormat(name, cost, false)} ${game.uncoveredCounters[name] ? name : "???"})
@@ -255,7 +255,7 @@ function BuyButton(game: Game, details: ButtonDetails) {
     let priceDisplay = () => {
         if(justPrice.length === 0) return "";
     return html`
-        <div>${justPrice.map(([name, cost]) => {
+        <div>price: ${justPrice.map(([name, cost]) => {
         return html`
             <span class=${game.money[name] >= cost ? "buyable" : "toexpensive"}>
                 (${game.numberFormat(name, cost, false)} ${game.uncoveredCounters[name] ? name : "???"})
@@ -265,7 +265,7 @@ function BuyButton(game: Game, details: ButtonDetails) {
     let effectsDisplay = () => {
         if(justEffects.length === 0) return "";
     return html`
-        <div>${justEffects.map(([name, cost]) => {
+        <div>effects: ${justEffects.map(([name, cost]) => {
         return html`
             <span>
                 (${game.numberFormat(name, cost)} ${game.uncoveredCounters[name] ? name : "???"})
