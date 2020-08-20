@@ -274,26 +274,34 @@ function BuyButton(game: Game, details: ButtonDetails) {
         })}</div>
     `};
     
+    const purchasable = checkPrice();
+    if(purchasable && isUncovered) {
+        for (let [name] of justEffects) {
+            game.uncoveredCounters[name] = true;
+        }
+    }
+    
+    let ref = {current: undefined as any as HTMLElement};
     let onclick = (e: MouseEvent) => {
+        // TODO only allow one click per tick
         if (!checkPrice()) return;
 
         for (let [key, value] of effects) {
             game.money[key] += value;
         }
-        
-        if(isUncovered) {
-            for (let [name] of justEffects) {
-                game.uncoveredCounters[name] = true;
-            }
-        }
 
         if(e.clientX) spawnParticle(e.clientX, e.clientY, "+");
+        else {
+            let cx = ref.current.offsetLeft + ref.current.offsetWidth / 2;
+            let cy = ref.current.offsetTop + ref.current.offsetHeight / 2;
+            spawnParticle(cx, cy, "+");
+        }
         // else spawn particle in the center
         emitGameUpdate();
     };
     
 return html`
-    <button class=${`button ${isUncovered && "uncovered"}`} disabled=${checkPrice() ? undefined : true} onclick=${onclick}>
+    <button ref=${ref} class=${`button ${isUncovered && "uncovered"}`} disabled=${purchasable ? undefined : true} onclick=${onclick}>
         <div class="buttonpurchase">
             ${isUncovered ? details.name : "???"}
         </div>
