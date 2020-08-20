@@ -223,40 +223,15 @@ function uniq<T>(item: T): T & { __unique: true } {
 }
 
 function BuyButton(game: Game, details: ButtonDetails) {
-    let node = el("button");
-    node.classList.add("button");
-    let button = el("div");
-    button.classList.add("buttonpurchase");
-
-    let buttonText = document.createTextNode("");
-    button.appendChild(buttonText);
-
-    let uncoverStatusChanged: CB[] = [];
-    let onUncover = (cb: CB) => (uncoverStatusChanged.push(cb), cb());
-
-    let uncovered = false; // todo save this somehow
-    let uncoveredThisTick = { tick: -1, uncovered: false };
     let checkPrice = () => price.every(([k, v]) => game.money[k] >= v);
     let getUncovered = () => {
-        if (uncovered) return true;
-        if (game.tick === uncoveredThisTick.tick) {
-            return uncoveredThisTick.uncovered;
+        if (price.every(([k, v]) => k.startsWith("_") ? true : game.money[k] >= v)) {
+            return true;
         }
-        if (
-            price.every(([k, v]) =>
-                k.startsWith("_") ? true : game.money[k] >= v,
-            )
-        ) {
-            uncovered = true;
-            uncoverStatusChanged.forEach(m => m());
-            node.classList.add("uncovered");
-        }
-        uncoveredThisTick = { tick: game.tick, uncovered };
-        return uncovered;
+        return false;
     };
-
-    onUncover(() => (buttonText.nodeValue = uncovered ? details.name : "???"));
-
+    
+    
     let requires = Object.entries(details.requires || {});
     let justPrice = Object.entries(details.price || {});
     let price = [...justPrice, ...requires];
@@ -265,97 +240,64 @@ function BuyButton(game: Game, details: ButtonDetails) {
         ...justEffects,
         ...justPrice.map(([k, v]) => [k, -v] as const),
     ];
-
-    let priceElem = el("div");
-    let effectsElem = el("div");
-    let reqsElem = el("div");
-    reqsElem.appendChild(document.createTextNode("requires: "));
-    priceElem.appendChild(document.createTextNode("price: "));
-    effectsElem.appendChild(document.createTextNode("effects: "));
-    let qqqElem = document.createTextNode("???");
-    effectsElem.appendChild(qqqElem);
-
-    for (let [name, cost] of requires) {
-        let n = el("span");
-        let tn = document.createTextNode("");
-        onGameUpdate(() => {
-            tn.nodeValue =
-                "(" +
-                game.numberFormat(name, cost, false) +
-                " " +
-                (game.uncoveredCounters[name] ? name : "???") +
-                ")";
-            if (game.money[name] >= cost) {
-                n.setAttribute("class", "buyable");
-            } else {
-                n.setAttribute("class", "tooexpensive");
-            }
-        });
-        n.appendChild(tn);
-        reqsElem.appendChild(n);
-    }
-
-    for (let [name, cost] of justPrice) {
-        let n = el("span");
-        let tn = document.createTextNode("");
-        onGameUpdate(() => {
-            tn.nodeValue =
-                "(" +
-                game.numberFormat(name, cost, false) +
-                " " +
-                (game.uncoveredCounters[name] ? name : "???") +
-                ")";
-            if (game.money[name] >= cost) {
-                n.setAttribute("class", "buyable");
-            } else {
-                n.setAttribute("class", "tooexpensive");
-            }
-        });
-        n.appendChild(tn);
-        priceElem.appendChild(n);
-    }
-
-    onUncover(() => {
-        if (uncovered) {
-            qqqElem.remove();
-
-            for (let [name, cost] of justEffects) {
-                game.uncoveredCounters[name] = true;
-                let n = el("span");
-                let tn = document.createTextNode("");
-                onGameUpdate(() => {
-                    tn.nodeValue =
-                        "(" + game.numberFormat(name, cost) + " " + name + ")";
-                });
-                n.appendChild(tn);
-                effectsElem.appendChild(n);
-            }
-            emitGameUpdate();
-        }
-    });
-
-    onGameUpdate(() => {
-        let purchaseable = checkPrice();
-        node.disabled = !purchaseable;
-        getUncovered();
-    });
-
-    node.addEventListener("click", e => {
+    
+    let isUncovered = getUncovered();
+    
+    let requiresDisplay = () => {
+        if(requires.length === 0) return "";
+    return html`
+        <div>${requires.map(([name, cost]) => {
+        return html`
+            <span class=${game.money[name] >= cost ? "buyable" : "toexpensive"}>
+                (${game.numberFormat(name, cost, false)} ${game.uncoveredCounters[name] ? name : "???"})
+            </span>`;
+        })}</div>
+    `};
+    let priceDisplay = () => {
+        if(justPrice.length === 0) return "";
+    return html`
+        <div>${justPrice.map(([name, cost]) => {
+        return html`
+            <span class=${game.money[name] >= cost ? "buyable" : "toexpensive"}>
+                (${game.numberFormat(name, cost, false)} ${game.uncoveredCounters[name] ? name : "???"})
+            </span>`;
+        })}</div>
+    `};
+    let effectsDisplay = () => {
+        if(justEffects.length === 0) return "";
+    return html`
+        <div>${justEffects.map(([name, cost]) => {
+        return html`
+            <span>
+                (${game.numberFormat(name, cost)} ${game.uncoveredCounters[name] ? name : "???"})
+            </span>`;
+        })}</div>
+    `};
+    
+    let onclick = (e: MouseEvent) => {
         if (!checkPrice()) return;
 
         for (let [key, value] of effects) {
             game.money[key] += value;
         }
 
-        spawnParticle(e.clientX, e.clientY, "+");
+        if(e.clientX) spawnParticle(e.clientX, e.clientY, "+");
+        // else spawn particle in the center
         emitGameUpdate();
-    });
-
-    node.appendChild(button);
-    requires.length && node.appendChild(reqsElem);
-    justPrice.length && node.appendChild(priceElem);
-    justEffects.length && node.appendChild(effectsElem);
-    return node;
+    };
+    
+return html`
+    <button class=${`button ${isUncovered && "uncovered"}`} disabled=${checkPrice() ? undefined : true} onclick=${onclick}>
+        <div class="buttonpurchase">
+            ${isUncovered ? details.name : "???"}
+        </div>
+        ${isUncovered ? html`
+            ${requiresDisplay()}
+            ${priceDisplay()}
+            ${effectsDisplay()}
+        ` : "???"}
+    </button>
+`;
 }
 
 function Counter(game: Game, currency: string, description: string) {
@@ -540,7 +482,11 @@ function Game() {
                         withID.effects,
                     ]),
             );
-            node.appendChild(BuyButton(game, withID));
+            
+            let n = document.createElement("div");
+            node.appendChild(n);
+            let rerender = () => μhtml.render(n, BuyButton(game, withID));
+            tickHandlers.push(() => rerender());
         } else if (confit[0] === "separator") {
             node.appendChild(el("div", n => n.classList.add("line")));
         } else if (confit[0] === "spacer") {
