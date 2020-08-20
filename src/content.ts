@@ -117,8 +117,7 @@ const gameContent: GameContent = {
         button("fire merchant", {
             price: {merchant: 1, gold: 10_000},
         }),
-        ["spacer"],
-        counter("sprinkler", "each sprinkler automatically buys {water|20_000} for {credit|1} credit every tick."),
+        counter("sprinkler", "each sprinkler automatically buys {water|20_000} water for {credit|1} credit every 10 ticks."),
         button("buy sprinkler", {
             price: {credit: 100},
             effects: {sprinkler: 1},
@@ -126,6 +125,11 @@ const gameContent: GameContent = {
         button("sell sprinkler", {
             price: {sprinkler: 1},
             effects: {credit: 80},
+        }),
+        ["spacer"],
+        button("buy seed bundle", {
+            price: {credit: 1000},
+            effects: {seed: 100_00},
         }),
     ],
     gameLogic: (game: Game) => {
@@ -136,7 +140,7 @@ const gameContent: GameContent = {
         if (game.money.stamina < 100) game.money.stamina += 1;
         if (game.money.stamina > 100) game.money.stamina = 100;
         
-        if(bal.sprinkler > 0) {
+        if(bal.sprinkler > 0 && bal.tick % 10 == 0) {
             const buycount =  Math.min(Math.floor(bal.credit / 1), bal.sprinkler);
             bal.water += 20_000 * buycount;
             bal.credit -= 1 * buycount;

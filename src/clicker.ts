@@ -474,6 +474,7 @@ function Game() {
     }
 
     // todo usages history so if you hoveer over (+0.1) it shows you where it's coming from
+    // todo per-item history. eg water should show history over 10 ticks instead of the default amount
 
     game.counterConfig = counterConfig;
 
