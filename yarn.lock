@@ -219,6 +219,11 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
+"@ungap/create-content@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@ungap/create-content/-/create-content-0.2.0.tgz#f123a7c79f391d853600abf6dba44034a8ced58e"
+  integrity sha512-CvmX0Mr5PfFARDBbSef0B+SAqSeMKaHOG/twJi9nbPtp/MiNPgyBLqZndiyO3RXQ0RXy6TqwarvB6KWzTmc4MQ==
+
 "@webassemblyjs/ast@1.8.5":
   version "1.8.5"
   resolved "https://registry.yarnpkg.com/@webassemblyjs/ast/-/ast-1.8.5.tgz#51b1c5fe6576a34953bf4b253df9f0d490d9e359"
@@ -3161,12 +3166,47 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
 
+uarray@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/uarray/-/uarray-1.0.0.tgz#e89bf0ea2129596f4bf653b66e53246ed6562b6c"
+  integrity sha512-LHmiAd5QuAv7pU2vbh+Zq9YOnqVK0H764p2Ozinpfy9ka58OID4IsGLiXsitqH7n0NAIDxvax1A/kDXpii/Ckg==
+
+udomdiff@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/udomdiff/-/udomdiff-1.1.0.tgz#1d0c4741b93a2ffd10728ca4cea15b277cc3082f"
+  integrity sha512-aqjTs5x/wsShZBkVagdafJkP8S3UMGhkHKszsu1cszjjZ7iOp86+Qb3QOFYh01oWjPMy5ZTuxD6hw5uTKxd+VA==
+
 uglify-js@3.4.x:
   version "3.4.10"
   resolved "https://registry.yarnpkg.com/uglify-js/-/uglify-js-3.4.10.tgz#9ad9563d8eb3acdfb8d38597d2af1d815f6a755f"
   dependencies:
     commander "~2.19.0"
     source-map "~0.6.1"
+
+uhandlers@^0.3.5:
+  version "0.3.5"
+  resolved "https://registry.yarnpkg.com/uhandlers/-/uhandlers-0.3.5.tgz#26109b60e307bfe5bb0685384abd1aeea7af4706"
+  integrity sha512-v5j3eTz8DxEGz89EgTvkCmRt+dZqmUSLB8fCzBQ1v3irsVB8WZr1gfbxm/ZpvcDv5m1r0NlXteg7fx7Rg/YP5w==
+  dependencies:
+    uarray "^1.0.0"
+
+uhtml@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/uhtml/-/uhtml-2.0.1.tgz#5907ddece68c109099c6e820f6c6a7aeaff09c83"
+  integrity sha512-IdFrMu2e5v5WDZPM39beZgFYi7SYgffDbWv5+ylCcq+7hQRF2fiap0DlPf8oPAqiRW/Y7h2qNlUzTUW2IPpXmQ==
+  dependencies:
+    "@ungap/create-content" "^0.2.0"
+    uarray "^1.0.0"
+    udomdiff "^1.1.0"
+    uhandlers "^0.3.5"
+    umap "^1.0.2"
+    uparser "^0.2.1"
+    uwire "^1.0.1"
+
+umap@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/umap/-/umap-1.0.2.tgz#2d7d4b145ad8c9f957921460798f3e221347c981"
+  integrity sha512-bW127HgG4H4VAD6qlqO5vCC+7bnlYvZ6A6BdwyGblkWvlEG7VYpj1bcpf3iJpvyKmkPZWDIeZDmoULz67ec7NA==
 
 union-value@^1.0.0:
   version "1.0.1"
@@ -3195,6 +3235,11 @@ unset-value@^1.0.0:
   dependencies:
     has-value "^0.3.1"
     isobject "^3.0.0"
+
+uparser@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/uparser/-/uparser-0.2.1.tgz#0251e7bca14ebeb222b79baf806784e40870ad47"
+  integrity sha512-hTwK8e+bAaER8gJBOysoFGjRPsX/xOthSPR/ieI9EgTf1rts9ey25tbDXIU0rDr/cGcLsvkCo1n8J/eccfAvvw==
 
 upath@^1.1.1:
   version "1.2.0"
@@ -3262,6 +3307,13 @@ utila@^0.4.0, utila@~0.4:
 uuid@^3.3.2:
   version "3.3.3"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.3.3.tgz#4568f0216e78760ee1dbf3a4d2cf53e224112866"
+
+uwire@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/uwire/-/uwire-1.0.1.tgz#e1723aafd3cfc7bb039f6446d549095b72615b0e"
+  integrity sha512-LOFKTfjqUu+DXbOAxj2Jruy6KY2bDx+HT6JrTOHQFD3a7rPew0ZTkzxef2/1hRBn+YM5wRdwDMAqwqpxoEVWtg==
+  dependencies:
+    uarray "^1.0.0"
 
 v8-compile-cache@2.0.3:
   version "2.0.3"

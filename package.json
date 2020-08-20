@@ -29,5 +29,7 @@
         "webpack-cli": "^3.3.6",
         "yarn": "^1.21.1"
     },
-    "dependencies": {}
+    "dependencies": {
+        "uhtml": "^2.0.1"
+    }
 }

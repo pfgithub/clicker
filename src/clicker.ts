@@ -1,4 +1,7 @@
 import { counterConfig, gameConfig, gameLogic } from "./content";
+import * as μhtml from "uhtml";
+
+const {html, svg} = μhtml;
 
 export type CB = () => void;
 
@@ -358,52 +361,45 @@ function BuyButton(game: Game, details: ButtonDetails) {
 function Counter(game: Game, currency: string, description: string) {
     let node = el("div");
     node.classList.add("counter");
-
-    let heading = document.createElement("div");
-    let p = document.createElement("div");
-    p.classList.add("counterdescription");
-    let descriptionNode = document.createTextNode(
-        "This counter has not been discovered yet.",
-    );
-    p.appendChild(descriptionNode);
-    let tn = document.createTextNode("");
-    heading.classList.add("counterheader");
-
+    
     let isRevealed = false;
-    onGameUpdate(() => {
+    let update = () => {
+        let displayDescription = "This counter has not been discovered yet.";
         if (!isRevealed && game.uncoveredCounters[currency]) {
-            descriptionNode.nodeValue = description;
+            displayDescription = description;
             node.classList.add("uncovered");
             isRevealed = true;
         }
-        if (!isRevealed) {
-            tn.nodeValue = "???";
-            return;
-        }
-
-        let count = game.money[currency];
-        let history = [...game.moneyHistory.map(h => h[currency]), count];
-        let average = 0;
-        let prevItem;
-        for (let item of history) {
-            if (prevItem !== undefined) {
-                average += Number(item - prevItem);
+        
+        let displayTitle = "???";
+        if (isRevealed) {
+            let count = game.money[currency];
+            let history = [...game.moneyHistory.map(h => h[currency]), count];
+            let average = 0;
+            let prevItem;
+            for (let item of history) {
+                if (prevItem !== undefined) {
+                    average += Number(item - prevItem);
+                }
+                prevItem = item;
             }
-            prevItem = item;
+            average /= history.length - 1;
+            average = Math.round(average);
+            
+            displayTitle = currency + ": " +
+                game.numberFormat(currency, count, false) +
+                (average ? " (" + game.numberFormat(currency, average) + ")" : "");
         }
-        average /= history.length - 1;
-        average = Math.round(average);
+    return html`
+        <div class="counterheader">${displayTitle}</div>
+        <div class="counterdescription">${displayDescription}</div>
+    `};
+    let rerender = () => μhtml.render(node, update());
+    rerender();
 
-        tn.nodeValue =
-            currency +
-            ": " +
-            game.numberFormat(currency, count, false) +
-            (average ? " (" + game.numberFormat(currency, average) + ")" : "");
+    onGameUpdate(() => {
+        rerender();
     });
-
-    heading.appendChild(tn);
-    node.appendChild(heading);
-    description && node.appendChild(p);
 
     return node;
 }
