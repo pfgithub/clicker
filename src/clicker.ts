@@ -1,7 +1,7 @@
 import { counterConfig, gameConfig, gameLogic } from "./content";
 import * as μhtml from "uhtml";
 
-const {html, svg} = μhtml;
+const {html, _svg} = μhtml;
 
 export type CB = () => void;
 
@@ -15,24 +15,6 @@ declare global {
             restart: () => void;
         };
     }
-}
-
-let gameUpdateHandlers: CB[] = [];
-let tickHandlers: CB[] = [];
-
-let tickInterval = setInterval(() => {
-    // gameTick();
-    tickHandlers.forEach(th => th());
-    emitGameUpdate();
-}, 100);
-
-function emitGameUpdate() {
-    gameUpdateHandlers.forEach(h => h());
-}
-
-function onGameUpdate(cb: CB) {
-    gameUpdateHandlers.push(cb);
-    cb();
 }
 
 function spawnParticle(x: number, y: number, text: string) {
@@ -233,7 +215,7 @@ function parseDesc(game: Game, desc: string) {
     return descCache[desc];
 }
 
-function BuyButton(game: Game, details: ButtonDetails) {
+function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
     let checkPrice = () => price.every(([k, v]) => game.money[k] >= v);
     let getUncovered = () => {
         if (price.every(([k]) => k.startsWith("_") ? true : game.uncoveredCounters[k])) {
@@ -308,7 +290,7 @@ function BuyButton(game: Game, details: ButtonDetails) {
             spawnParticle(cx, cy, "+");
         }
         // else spawn particle in the center
-        emitGameUpdate();
+        emit();
     };
     
 return html`
@@ -363,6 +345,19 @@ export function splitNumber(
 }
 
 function Game() {
+    let gameUpdateHandlers: CB[] = [];
+    let tickHandlers: CB[] = [];
+
+    let tickInterval = setInterval(() => {
+        // gameTick();
+        tickHandlers.forEach(th => th());
+        emitGameUpdate();
+    }, 100);
+
+    function emitGameUpdate() {
+        gameUpdateHandlers.forEach(h => h());
+    }
+    
     let gameroot = el("div");
     gameroot.classList.add("gameroot");
 
@@ -492,7 +487,7 @@ function Game() {
             return Counter(game, confit[1], confit[2]);
         } else if (confit[0] === "button") {
             let withID = confit[1] as ButtonDetails;
-            return BuyButton(game, withID);
+            return BuyButton(game, withID, () => emitGameUpdate());
         } else if (confit[0] === "separator") {
             return html`<div class="line"></div>`;
         } else if (confit[0] === "spacer") {
