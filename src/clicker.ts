@@ -286,8 +286,9 @@ function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
 
         if(e.clientX) spawnParticle(e.clientX, e.clientY, "+");
         else {
-            let cx = ref.current.offsetLeft + ref.current.offsetWidth / 2;
-            let cy = ref.current.offsetTop + ref.current.offsetHeight / 2;
+            const rect = ref.current.getBoundingClientRect();
+            const cx = rect.left + (rect.right - rect.left) / 2;
+            const cy = rect.top + (rect.bottom - rect.top) / 2;
             spawnParticle(cx, cy, "+");
         }
         // else spawn particle in the center
