@@ -213,7 +213,7 @@ const gameContent: GameContent = {
             bal.mosh = Math.floor(bal.mosh);
             bal.goop += (prevmosh - bal.mosh);
         }else{
-            bal.goop = 0;
+            bal.mosh = 0;
         }
         if(bal.goop > 0) {
             game.uncoveredCounters.goop = true;
