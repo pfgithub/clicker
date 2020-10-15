@@ -520,7 +520,11 @@ function Game() {
     tickHandlers.push(() => rerender());
 
     window.game = {
-        cheat: { money: game.money },
+        cheat: { money: new Proxy(game.money, {
+            set: () => {
+                throw new Error("nah");
+            }
+        }) },
         restart: () => {
             localStorage.clear();
             clearInterval(tickInterval);
