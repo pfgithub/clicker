@@ -39,7 +39,7 @@ const gameContent: GameContent = {
         sprinkler: {displayMode: "integer"},
         mosh: {displayMode: "decimal"},
         goop: {displayMode: "decimal", displayPrefix: "ဪʗ"},
-        mosh_spore: {initialValue: 1, displayMode: "integer"},
+        mosh_spore: {initialValue: 10, displayMode: "integer"},
         // ဪʗ25
         _ach_1: { initialValue: 1, displayMode: "boolean" },
         _ach_2: { initialValue: 1, displayMode: "boolean" },
