@@ -147,7 +147,7 @@ const gameContent: GameContent = {
         ["spacer"],
         counter("mosh", "mosh has a half life of 700 ticks, afterwhich it turns to goop"),
         counter("goop", "goop"),
-        button("mosh seeds", {
+        button("mosh seeds", { // TODO reveal button title once seed is reveaed, even if mosh spore isn't revealed
             price: {seed: 1_000_00, mosh_spore: 1},
             effects: {mosh: 100_00},
         }),
