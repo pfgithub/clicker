@@ -272,8 +272,10 @@ function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
     }
     
     let ref = {current: undefined as any as HTMLElement};
+    let lastClicked = game.tick;
     let onclick = (e: MouseEvent) => {
-        // TODO only allow one click per tick
+        if(game.tick == lastClicked) return;
+        lastClicked = game.tick;
         // TODO allow click and hold to buy at max speed
         if (!checkPrice()) return;
 

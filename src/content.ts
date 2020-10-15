@@ -37,6 +37,7 @@ const gameContent: GameContent = {
         merchant: { displayMode: "integer" },
         "ceo apples": { displayMode: "decimal" },
         sprinkler: {displayMode: "integer"},
+        // ဪʗ25
         _ach_1: { initialValue: 1, displayMode: "boolean" },
         _ach_2: { initialValue: 1, displayMode: "boolean" },
         _ach_3: { initialValue: 1, displayMode: "boolean" },
