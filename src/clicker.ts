@@ -150,7 +150,7 @@ export type DisplayMode =
     | "integer"
     | "boolean"
     | "hidden"
-    | "integernocomma";
+    | "integernocomma1k";
 export type ObjectMap<T> = { [key: string]: T };
 export type CounterConfigurationItem = {
     displayMode: DisplayMode;
@@ -435,8 +435,11 @@ function Game() {
                     suffix
                 );
             }
-            if (displayMode === "integernocomma") {
-                let resV = n.toLocaleString(undefined, { useGrouping: false });
+            if (displayMode === "integernocomma1k") {
+                let resV = n.toLocaleString(undefined, { });
+                if(n >= 1000 && n < 10_000) {
+                    resV = n.toLocaleString(undefined, { useGrouping: false });
+                }
                 return (
                     (showSign && Math.sign(+resV) === 1 ? "+" : "") +
                     prefix +

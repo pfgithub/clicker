@@ -33,10 +33,12 @@ const gameContent: GameContent = {
         apple: { displayMode: "integer" },
         water: { displayMode: "decimal" },
         bucket: { displayMode: "integer" },
-        credit: { displayPrefix: "©", displayMode: "integernocomma" },
+        credit: { displayPrefix: "©", displayMode: "integernocomma1k" }, // TODO maybe only disable commas for 1000-9999 but turn them on past that?
         merchant: { displayMode: "integer" },
         "ceo apples": { displayMode: "decimal" },
         sprinkler: {displayMode: "integer"},
+        mosh: {displayMode: "decimal"},
+        goop: {displayMode: "decimal", displayPrefix: "ဪʗ"},
         // ဪʗ25
         _ach_1: { initialValue: 1, displayMode: "boolean" },
         _ach_2: { initialValue: 1, displayMode: "boolean" },
@@ -54,12 +56,13 @@ const gameContent: GameContent = {
             effects: { achievement: 1 },
         }),
         button("this game", {
-            requires: { credit: 2020 },
+            requires: { credit: new Date().getFullYear() }, // hmm
             price: { _ach_3: 1 },
             effects: { achievement: 1 },
         }),
         ["separator"],
         counter("stamina", "stamina increases {stamina|1} per tick, max {stamina|100}"), // revealcondition: stamina < 10% (don't show stamina until you run out)
+        // later I could have a "relax" thing that increases your max stamina
         counter("gold", "gold lets you purchase things"),
         button("fish gold from wishing well", {
             price: { stamina: 5 },
@@ -96,7 +99,7 @@ const gameContent: GameContent = {
         }),
         button("use bucket on wishing well", {
             price: { bucket: 1, stamina: 1_00 },
-            effects: { water: 10_00, gold: 10_00 },
+            effects: { water: 11_00, gold: 10_00 },
         }),
         button("sell apples", {
             requires: { market: 25 },
@@ -129,8 +132,23 @@ const gameContent: GameContent = {
         }),
         ["spacer"],
         button("buy seed bundle", {
-            price: {credit: 1000},
+            price: {credit: 100},
             effects: {seed: 100_00},
+        }),
+        button("buy large seed bundle", {
+            price: {credit: 1_000},
+            effects: {seed: 2_000_00},
+        }),
+        button("buy mega seed bundle", {
+            price: {credit: 500_000},
+            effects: {seed: 1_000_000_00},
+        }),
+        ["spacer"],
+        counter("mosh", "mosh has a half life of 700 ticks, afterwhich it turns to goop"),
+        counter("goop", "goop"),
+        button("mosh seeds", {
+            price: {seed: 1_000_00},
+            effects: {mosh: 100_00},
         }),
     ],
     gameLogic: (game: Game) => {
@@ -186,6 +204,18 @@ const gameContent: GameContent = {
             bal.apple -= buycount * 80;
             bal.credit += buycount * 1;
             bal["ceo apples"] += buycount * 2; // ceo takes 2 apples from every merchant sell
+        }
+        
+        if(bal.mosh > 0) {
+            const prevmosh = bal.mosh;
+            bal.mosh *= 999/1000;
+            bal.mosh = Math.floor(bal.mosh);
+            bal.goop += (prevmosh - bal.mosh);
+        }else{
+            bal.goop = 0;
+        }
+        if(bal.goop > 0) {
+            game.uncoveredCounters.goop = true;
         }
     },
 };
