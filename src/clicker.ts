@@ -448,7 +448,7 @@ function Game() {
                 );
             }
             if (displayMode === "boolean") {
-                return n === 0 ? "0" : "1";
+                return n === 0 ? "hasn't" : "has";
             }
             if (displayMode === "hidden") {
                 return "Oops! You should never see this!";
@@ -524,8 +524,9 @@ function Game() {
 
     window.game = {
         cheat: { money: new Proxy(game.money, {
-            set: () => {
-                throw new Error("nah");
+            set: (obj, prop, v) => {
+                if(!(window as any).__allow_cheating) throw new Error("nah");
+                return Reflect.set(obj, prop, v);
             }
         }) },
         restart: () => {

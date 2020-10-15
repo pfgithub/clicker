@@ -39,6 +39,7 @@ const gameContent: GameContent = {
         sprinkler: {displayMode: "integer"},
         mosh: {displayMode: "decimal"},
         goop: {displayMode: "decimal", displayPrefix: "ဪʗ"},
+        mosh_spore: {initialValue: 1, displayMode: "integer"},
         // ဪʗ25
         _ach_1: { initialValue: 1, displayMode: "boolean" },
         _ach_2: { initialValue: 1, displayMode: "boolean" },
@@ -147,7 +148,7 @@ const gameContent: GameContent = {
         counter("mosh", "mosh has a half life of 700 ticks, afterwhich it turns to goop"),
         counter("goop", "goop"),
         button("mosh seeds", {
-            price: {seed: 1_000_00},
+            price: {seed: 1_000_00, mosh_spore: 1},
             effects: {mosh: 100_00},
         }),
     ],
