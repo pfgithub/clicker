@@ -53,7 +53,7 @@ body {
     padding: 10px;
     justify-content: center;
     display: grid;
-    grid-template-columns: [start] repeat(auto-fill, minmax(0, 300px)) [end];
+    grid-template-columns: [start] repeat(auto-fit, minmax(300px, 1fr)) [end];
     grid-auto-rows: max-content;
     grid-auto-flow: row;
 }
@@ -66,8 +66,12 @@ body {
     grid-column: 1 / end; /*blink workaround*/
 }
 .spacer {
-    grid-column-end: end;
+    grid-column: 1/end;
+    height: 20px;
 }
+/*.spacer {
+    grid-column-end: end;
+}*/
 .button,
 .counter {
     margin: 10px;

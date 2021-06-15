@@ -40,12 +40,26 @@ const gameContent: GameContent = {
         mosh: {displayMode: "decimal"},
         goop: {displayMode: "decimal"},
         mosh_spore: {initialValue: 10, displayMode: "integer", unlockHidden: true, title: "ဪ"},
-        mosh_spore_0: {displayMode: "integer", title: "ဩ"},
+        mosh_spore_0: {displayMode: "decimal", title: "ဩ"},
         // ဪ⎩25⎫
         // ဩ (spore stage1) → ဪ (spore)
+
+        // next steps:
+        // - converting spore0 → spore
+        //   - this process should use up all 1,000_00 goop and be gated behind having enough rot to not take forever or something
+        //   - this process must produce at least 11 spore seeds
+        //   - what should it be?
+        // - mixing mud without stamina, perhaps we need a mixing machine? producing any large quantities of swamp is not fun with that stamina req.
+
+        mud: {displayMode: "decimal"},
+        bacteria: {displayMode: "decimal"},
+        swamp: {displayMode: "decimal"},
+        rot: {displayMode: "integer"}, // passively produces spore0
+
         _ach_1: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
         _ach_2: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
         _ach_3: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
+        _ach_4: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
     },
     gameConfig: [
         counter("achievement", "number of achievements you have recieved"),
@@ -54,12 +68,17 @@ const gameContent: GameContent = {
             price: { _ach_1: 1 }, // _ach_1: [1, {unavailable: "hide"}]
             effects: { achievement: 1 },
         }),
-        button("eat apple", {
+        button("eat apples", {
             price: { apple: 1_00, _ach_2: 1 },
             effects: { achievement: 1 },
         }),
         button("this game", {
             requires: { credit: new Date().getFullYear() }, // hmm
+            price: { _ach_3: 1 },
+            effects: { achievement: 1 },
+        }),
+        button("goop maker", {
+            requires: { goop: 2000_00 }, // requires you to produce your own mosh spores past the original 10
             price: { _ach_3: 1 },
             effects: { achievement: 1 },
         }),
@@ -147,11 +166,36 @@ const gameContent: GameContent = {
             effects: {seed: 1_000_000_00},
         }),
         ["spacer"],
-        counter("mosh", "has a half life of 700 ticks, afterwhich it turns to {goop}"),
+        counter("mosh", "has a half life of 700 ticks, decaying into {goop}"),
         counter("goop", "goop"), // you can get a maximum of 1,000 goop until you unlock mosh spores. make sure it's not possible to lose goop.
         button("mosh seeds", { // TODO reveal button title once seed is reveaed, even if mosh spore isn't revealed
             price: {seed: 1_000_00, mosh_spore: 1},
             effects: {mosh: 100_00},
+        }),
+        counter("mosh_spore", "spores to produce mosh"),
+        counter("mosh_spore_0", "spore seeds"),
+        counter("rot", "substrate that passively produces {mosh_spore_0}"),
+        ["spacer"],
+        counter("mud", "decays into mosh with a half life of 70 ticks"),
+        button("mix mud", {
+            price: {goop: 100_00, water: 20_000, stamina: 100},
+            effects: {mud: 100_00},
+        }),
+        counter("bacteria", "decays into mosh with a half life of 70 ticks"),
+        button("grow bacteria", {
+            price: {goop: 100_00, apple: 100},
+            effects: {bacteria: 100_00},
+        }),
+        ["spacer"],
+        counter("swamp", "decays into mosh with a half life of 700 ticks"),
+        button("lay swamp", {
+            price: {mud: 100_00, bacteria: 100_00},
+            effects: {swamp: 200_00},
+        }),
+        button("rot apples", {
+            requires: {swamp: 300_00},
+            price: {apple: 100_000},
+            effects: {rot: 1},
         }),
         // I should do some stuff using stamina to convert goop into materials or something
     ],
@@ -162,6 +206,7 @@ const gameContent: GameContent = {
             game.money[name] += count;
             (game.moneyTransfer[name] ??= {})[reason] = {diff: count, frequency: 1, lastSet: game.tick};
         };
+        // TODO post up10t regardless of if it's the 10t mark or not
         const up10t = (name: string, count: number, reason: string) => {
             game.money[name] += count;
             (game.moneyTransfer[name] ??= {})[reason] = {diff: count, frequency: 10, lastSet: game.tick};
@@ -220,16 +265,40 @@ const gameContent: GameContent = {
             up10t("credit", buycount * 1, "merchant");
             up10t("ceo apples", buycount * 2, "merchant"); // ceo takes 2 apples from every merchant sell
         }
-        
-        if(bal.mosh > 0) {
-            const prevmosh = bal.mosh;
-            const newmosh = prevmosh * (999 / 1000) |0;
-            const diff = prevmosh - newmosh;
 
+        const hlc = (num: number, hl: number) => Math.ceil(num * hl);
+        const halflife700 = (num: number): number => {
+            return hlc(num, 1 / 1000);
+        };
+        const halflife70 = (num: number): number => {
+            return hlc(num, 1 / 100);
+        };
+
+        if(bal.mud > 0) {
+            const diff = halflife70(bal.mud);
+            up1t("mud", -diff, "mud decay");
+            up1t("mosh", diff, "mud decay");
+        }
+        if(bal.bacteria > 0) {
+            const diff = halflife70(bal.bacteria);
+            up1t("bacteria", -diff, "bacteria decay");
+            up1t("mosh", diff, "bacteria decay");
+        }
+        if(bal.swamp > 0) {
+            const diff = halflife700(bal.swamp);
+            up1t("swamp", -diff, "swamp decay");
+            up1t("mosh", diff, "swamp decay");
+        }
+
+        up1t("mosh_spore_0", bal.rot, "rot");
+        if(bal.mosh_spore_0 > 0) {
+            game.uncoveredCounters.mosh_spore_0 = true;
+        }
+
+        if(bal.mosh > 0) {
+            const diff = halflife700(bal.mosh);
             up1t("mosh", -diff, "mosh decay");
             up1t("goop", diff, "mosh decay");
-        }else{
-            set1t("mosh", 0);
         }
     },
 };
