@@ -187,11 +187,109 @@ export type CounterConfigurationItem = {
     displayPrefix?: string;
     initialValue?: number;
     unlockHidden?: boolean;
+    title?: string;
 };
 export type CounterConfig = ObjectMap<CounterConfigurationItem>;
 export type TransferInfo = {
     [reason: string]: {diff: number, frequency: number, lastSet: number},
 };
+export function titleFormat(game: Game, currency: string): string {
+    if(!game.uncoveredCounters[currency]) return "???";
+    const currencyDetails = game.counterConfig[currency];
+    if(!currencyDetails) return "EROR_TITLE«"+currency+"»";
+    return currencyDetails.title ?? currency;
+}
+export function numberFormat(game: Game, currency: string, n: number, showSign: boolean = true): string {
+    let currencyDetails = game.counterConfig[currency] || {};
+
+    let displayMode = currencyDetails.displayMode || "error";
+    let suffix = currencyDetails.displaySuffix || "";
+    let prefix = currencyDetails.displayPrefix || "";
+
+    if (displayMode === "percentage") {
+        let resStr = Math.abs(n / 100).toLocaleString(undefined, {
+            style: "percent",
+        });
+        let sign = Math.sign(n);
+
+        return (
+            (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
+            resStr +
+            (suffix || "")
+        );
+    }
+    if (displayMode === "numberpercentage") {
+        let split = splitNumber(n);
+        let resPercent = (split.decimal / 100).toLocaleString(
+            undefined,
+            {
+                style: "percent",
+            },
+        );
+        let resNumber = Math.abs(split.integer).toLocaleString(
+            undefined,
+        );
+
+        let showsZero = n === 0;
+        let sign = Math.sign(n);
+
+        return (
+            (showSign && sign === 1 ? "+" : sign === -1 ? "-" : "") +
+            [
+                split.integer !== 0 ? resNumber + (suffix || "") : "",
+                split.decimal === 0 ? "" : resPercent,
+                showsZero ? "0" : "",
+            ]
+                .filter(m => m)
+                .join(" and ")
+        );
+    }
+    if (displayMode === "decimal") {
+        let resV = Math.abs(n / 100).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+        });
+        const sign = Math.sign(n);
+        return (
+            (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
+            prefix +
+            resV +
+            suffix
+        );
+    }
+    if (displayMode === "integer") {
+        let resV = Math.abs(n).toLocaleString(undefined, {});
+        const sign = Math.sign(n);
+        return (
+            (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
+            prefix +
+            resV +
+            suffix
+        );
+    }
+    if (displayMode === "integernocomma1k") {
+        let resV = Math.abs(n).toLocaleString(undefined, { });
+        if(n >= 1000 && n < 10_000) {
+            resV = Math.abs(n).toLocaleString(undefined, { useGrouping: false });
+        }
+        const sign = Math.sign(n);
+        return (
+            (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
+            prefix +
+            resV +
+            suffix
+        );
+    }
+    if (displayMode === "boolean") {
+        return n === 0 ? "hasn't" : "has";
+    }
+    if (displayMode === "hidden") {
+        return "Oops! You should never see this!";
+    }
+    if (displayMode === "error") {
+        return "ERR«"+currency+"»";
+    }
+    throw new Error("invalid display mode: " + displayMode);
+}
 export type Game = {
     tick: number;
     money: ObjectMap<number>;
@@ -200,11 +298,6 @@ export type Game = {
     counterConfig: CounterConfig;
     counterState: ObjectMap<{showDiff: boolean}>;
     cheatMode?: boolean;
-    numberFormat: (
-        currency: string,
-        number: number,
-        usePlus?: boolean,
-    ) => string;
 };
 export type Price = ObjectMap<number>;
 export type ManualButtonDetails = {
@@ -241,9 +334,15 @@ function uniq<T>(item: T): T & { __unique: true } {
 
 let descCache: {[key: string]: μhtml.Hole} = {};
 function parseDesc(game: Game, desc: string) {
-    descCache[desc] ??= html`${desc.replace(/{(.+?)\|(.+?)}/g, (_, b, c) => {
-        const number = +c.split("_").join("");
-        return game.numberFormat(b, number, false);
+    descCache[desc] ??= html`${desc.replace(/{([^}]+?)}/g, (_, a) => {
+        const split = a.split("|");
+        if(split.length === 2) {
+            const [b, c] = split;
+            const number = +c.split("_").join("");
+            return numberFormat(game, b, number, false);
+        }else{
+            return titleFormat(game, split[0]);
+        }
     })} `;
     return descCache[desc];
 }
@@ -274,7 +373,7 @@ function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
         <div>requires: ${requires.map(([name, cost]) => {
         return html`
             <span class=${game.money[name] >= cost ? "buyable" : "toexpensive"}>
-                (${game.numberFormat(name, cost, false)} ${game.uncoveredCounters[name] ? name : "???"})
+                (${numberFormat(game, name, cost, false)} ${titleFormat(game, name)})
             </span>`;
         })}</div>
     `};
@@ -284,7 +383,7 @@ function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
         <div>price: ${justPrice.map(([name, cost]) => {
         return html`
             <span class=${game.money[name] >= cost ? "buyable" : "tooexpensive"}>
-                (${game.numberFormat(name, cost, false)} ${game.uncoveredCounters[name] ? name : "???"})
+                (${numberFormat(game, name, cost, false)} ${titleFormat(game, name)})
             </span>`;
         })}</div>
     `};
@@ -294,7 +393,7 @@ function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
         <div>effects: ${isUncovered ? justEffects.map(([name, cost]) => {
         return html`
             <span>
-                (${game.numberFormat(name, cost)} ${game.uncoveredCounters[name] ? name : "???"})
+                (${numberFormat(game, name, cost)} ${titleFormat(game, name)})
             </span>`;
         }) : "???"}</div>
     `};
@@ -356,12 +455,12 @@ function Counter(game: Game, currency: string, description: string) {
         const reasons = Object.entries(game.moneyTransfer[currency] ?? {}).filter(([k, v]) => game.tick < v.lastSet + v.frequency && v.diff !== 0);
 
         const average = reasons.reduce((t, [k, v]) => t + v.diff / v.frequency, 0);
-        const avgfmt = game.numberFormat(currency, average);
-        const titleText = currency + ": " + game.numberFormat(currency, count, false) + (average && !state.showDiff ? " ("+avgfmt+")" : "");
+        const avgfmt = numberFormat(game, currency, average);
+        const titleText = titleFormat(game, currency) + ": " + numberFormat(game, currency, count, false) + (average && !state.showDiff ? " ("+avgfmt+")" : "");
 
         const reasonsContent = reasons.map(([k, v]) => {
             return html`
-                <li>${game.numberFormat(currency, v.diff) + "/"+(v.frequency === 1 ? "" : v.frequency)+"t: "+k}</li>
+                <li>${numberFormat(game, currency, v.diff) + "/"+(v.frequency === 1 ? "" : v.frequency)+"t: "+k}</li>
             `;
         });
         if(reasonsContent.length === 0) reasonsContent.push(html`<li><i>Not changing</i></li>`);
@@ -418,95 +517,6 @@ function Game() {
         counterState: {},
         moneyTransfer: {},
         uncoveredCounters: { stamina: true },
-        numberFormat: (currency, n, showSign = true) => {
-            let currencyDetails = game.counterConfig[currency] || {};
-
-            let displayMode = currencyDetails.displayMode;
-            let suffix = currencyDetails.displaySuffix || "";
-            let prefix = currencyDetails.displayPrefix || "";
-
-            if (displayMode === "percentage") {
-                let resStr = Math.abs(n / 100).toLocaleString(undefined, {
-                    style: "percent",
-                });
-                let sign = Math.sign(n);
-
-                return (
-                    (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
-                    resStr +
-                    (suffix || "")
-                );
-            }
-            if (displayMode === "numberpercentage") {
-                let split = splitNumber(n);
-                let resPercent = (split.decimal / 100).toLocaleString(
-                    undefined,
-                    {
-                        style: "percent",
-                    },
-                );
-                let resNumber = Math.abs(split.integer).toLocaleString(
-                    undefined,
-                );
-
-                let showsZero = n === 0;
-                let sign = Math.sign(n);
-
-                return (
-                    (showSign && sign === 1 ? "+" : sign === -1 ? "-" : "") +
-                    [
-                        split.integer !== 0 ? resNumber + (suffix || "") : "",
-                        split.decimal === 0 ? "" : resPercent,
-                        showsZero ? "0" : "",
-                    ]
-                        .filter(m => m)
-                        .join(" and ")
-                );
-            }
-            if (displayMode === "decimal") {
-                let resV = Math.abs(n / 100).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                });
-                const sign = Math.sign(n);
-                return (
-                    (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
-                    prefix +
-                    resV +
-                    suffix
-                );
-            }
-            if (displayMode === "integer") {
-                let resV = Math.abs(n).toLocaleString(undefined, {});
-                const sign = Math.sign(n);
-                return (
-                    (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
-                    prefix +
-                    resV +
-                    suffix
-                );
-            }
-            if (displayMode === "integernocomma1k") {
-                let resV = Math.abs(n).toLocaleString(undefined, { });
-                if(n >= 1000 && n < 10_000) {
-                    resV = Math.abs(n).toLocaleString(undefined, { useGrouping: false });
-                }
-                const sign = Math.sign(n);
-                return (
-                    (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
-                    prefix +
-                    resV +
-                    suffix
-                );
-            }
-            if (displayMode === "boolean") {
-                return n === 0 ? "hasn't" : "has";
-            }
-            if (displayMode === "hidden") {
-                return "Oops! You should never see this!";
-            }
-            alert("invalid display mode: " + displayMode);
-            throw "invalid display mode: " + displayMode;
-        },
     };
 
     let savedGame = localStorage.getItem("save");

@@ -38,9 +38,11 @@ const gameContent: GameContent = {
         "ceo apples": { displayMode: "decimal" },
         sprinkler: {displayMode: "integer"},
         mosh: {displayMode: "decimal"},
-        goop: {displayMode: "decimal", displayPrefix: "⎩", displaySuffix: "⎫"},
-        mosh_spore: {initialValue: 10, displayMode: "integer", unlockHidden: true},
+        goop: {displayMode: "decimal"},
+        mosh_spore: {initialValue: 10, displayMode: "integer", unlockHidden: true, title: "ဪ"},
+        mosh_spore_0: {displayMode: "integer", title: "ဩ"},
         // ဪ⎩25⎫
+        // ဩ (spore stage1) → ဪ (spore)
         _ach_1: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
         _ach_2: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
         _ach_3: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
@@ -145,7 +147,7 @@ const gameContent: GameContent = {
             effects: {seed: 1_000_000_00},
         }),
         ["spacer"],
-        counter("mosh", "mosh has a half life of 700 ticks, afterwhich it turns to goop"),
+        counter("mosh", "has a half life of 700 ticks, afterwhich it turns to {goop}"),
         counter("goop", "goop"), // you can get a maximum of 1,000 goop until you unlock mosh spores. make sure it's not possible to lose goop.
         button("mosh seeds", { // TODO reveal button title once seed is reveaed, even if mosh spore isn't revealed
             price: {seed: 1_000_00, mosh_spore: 1},
