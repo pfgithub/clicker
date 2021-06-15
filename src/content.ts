@@ -46,20 +46,27 @@ const gameContent: GameContent = {
 
         // next steps:
         // - converting spore0 → spore
-        //   - this process should use up all 1,000_00 goop and be gated behind having enough rot to not take forever or something
+        //   - this process should use up all 1,000_00 goop and be gated behind having enough spore seeds
         //   - this process must produce at least 11 spore seeds
         //   - what should it be?
+        //   - let's plant the spore seeds in mosh and have them eat bacteria
+        //   - then do something else to use up the entirety of the goop supply
+        //   - uuh and how do you make sure you don't plant too many spore seeds and be unable to make any bacteria feed
+        //   - I'll do something else I guess
         // - mixing mud without stamina, perhaps we need a mixing machine? producing any large quantities of swamp is not fun with that stamina req.
+        // - ok this is a terrible idea but what if rot started rotting your apple supply and you have to destroy the rot to make
+        //   sure it doesn't destroy all your apples. that's a terrible idea because it wouldn't rot fast enough and you'd end up with
+        //   an increasing rot supply for free. actually, it'd rot faster over time. idk maybe that'd work. 
 
         mud: {displayMode: "decimal"},
         bacteria: {displayMode: "decimal"},
         swamp: {displayMode: "decimal"},
         rot: {displayMode: "integer"}, // passively produces spore0
 
-        _ach_1: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
-        _ach_2: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
-        _ach_3: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
-        _ach_4: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
+        _ach_1: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
+        _ach_2: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
+        _ach_3: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
+        _ach_4: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
     },
     gameConfig: [
         counter("achievement", "number of achievements you have recieved"),
@@ -171,6 +178,10 @@ const gameContent: GameContent = {
         button("mosh seeds", { // TODO reveal button title once seed is reveaed, even if mosh spore isn't revealed
             price: {seed: 1_000_00, mosh_spore: 1},
             effects: {mosh: 100_00},
+        }),
+        button("make goop", {
+            price: {mosh: 10_00},
+            effects: {goop: 10_00},
         }),
         counter("mosh_spore", "spores to produce mosh"),
         counter("mosh_spore_0", "spore seeds"),

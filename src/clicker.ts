@@ -183,7 +183,9 @@ export type DisplayMode =
     | "integer"
     | "boolean"
     | "hidden"
-    | "integernocomma1k";
+    | "integernocomma1k"
+    | "inverse_boolean"
+;
 export type ObjectMap<T> = { [key: string]: T };
 export type CounterConfigurationItem = {
     displayMode: DisplayMode;
@@ -284,7 +286,10 @@ export function numberFormat(game: Game, currency: string, n: number, showSign: 
         );
     }
     if (displayMode === "boolean") {
-        return n === 0 ? "hasn't" : "has";
+        return n === 0 ? "doesn't have" : "has";
+    }
+    if (displayMode === "inverse_boolean") {
+        return n === 0 ? "has" : "doesn't have";
     }
     if (displayMode === "hidden") {
         return "Oops! You should never see this!";
