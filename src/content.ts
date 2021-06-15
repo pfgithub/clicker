@@ -38,12 +38,12 @@ const gameContent: GameContent = {
         "ceo apples": { displayMode: "decimal" },
         sprinkler: {displayMode: "integer"},
         mosh: {displayMode: "decimal"},
-        goop: {displayMode: "decimal", displayPrefix: "ဪʗ"},
-        mosh_spore: {initialValue: 10, displayMode: "integer"},
-        // ဪʗ25
-        _ach_1: { initialValue: 1, displayMode: "boolean" },
-        _ach_2: { initialValue: 1, displayMode: "boolean" },
-        _ach_3: { initialValue: 1, displayMode: "boolean" },
+        goop: {displayMode: "decimal", displayPrefix: "⎩", displaySuffix: "⎫"},
+        mosh_spore: {initialValue: 10, displayMode: "integer", unlockHidden: true},
+        // ဪ⎩25⎫
+        _ach_1: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
+        _ach_2: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
+        _ach_3: { initialValue: 1, displayMode: "boolean", unlockHidden: true },
     },
     gameConfig: [
         counter("achievement", "number of achievements you have recieved"),
@@ -146,43 +146,55 @@ const gameContent: GameContent = {
         }),
         ["spacer"],
         counter("mosh", "mosh has a half life of 700 ticks, afterwhich it turns to goop"),
-        counter("goop", "goop"),
+        counter("goop", "goop"), // you can get a maximum of 1,000 goop until you unlock mosh spores. make sure it's not possible to lose goop.
         button("mosh seeds", { // TODO reveal button title once seed is reveaed, even if mosh spore isn't revealed
             price: {seed: 1_000_00, mosh_spore: 1},
             effects: {mosh: 100_00},
         }),
+        // I should do some stuff using stamina to convert goop into materials or something
     ],
     gameLogic: (game: Game) => {
         // logic
-        let bal = game.money;
-        game.money.tick++;
-        game.money.gold += game.money.market;
-        if (game.money.stamina < 100) game.money.stamina += 1;
-        if (game.money.stamina > 100) game.money.stamina = 100;
+        let bal = game.money as Readonly<{[key: string]: number}>;
+        const up1t = (name: string, count: number, reason: string) => {
+            game.money[name] += count;
+            (game.moneyTransfer[name] ??= {})[reason] = {diff: count, frequency: 1, lastSet: game.tick};
+        };
+        const up10t = (name: string, count: number, reason: string) => {
+            game.money[name] += count;
+            (game.moneyTransfer[name] ??= {})[reason] = {diff: count, frequency: 10, lastSet: game.tick};
+        };
+        const set1t = (name: string, count: number) => {
+            game.money[name] = count;
+        };
+        up1t("tick", 1, "advance");
+        up1t("gold", bal.market, "markets");
+        if (bal.stamina < 100) up1t("stamina", 1, "rest");
+        if (bal.stamina > 100) set1t("stamina", 100);
         
-        if(bal.sprinkler > 0 && bal.tick % 10 == 0) {
+        if(bal.sprinkler > 0 && bal.tick % 10 === 0) {
             const buycount =  Math.min(Math.floor(bal.credit / 1), bal.sprinkler);
-            bal.water += 20_000 * buycount;
-            bal.credit -= 1 * buycount;
+            up10t("water", 20_000 * buycount, "sprinkler");
+            up10t("credit", -1 * buycount, "sprinkler");
         }
 
-        if (bal.tree < 0) bal.tree = 0;
+        if (bal.tree < 0) set1t("tree", 0);
         let treeWaterCost = 2;
         let tsplit = splitNumber(bal.tree);
         let liveTreeCount = tsplit.integer;
         let requiredWater = liveTreeCount;
         let availableWater = bal.water / treeWaterCost;
-        if (bal.tick % 10 === 0) bal.apple += liveTreeCount;
+        if(bal.tick % 10 === 0) up10t("apple", liveTreeCount, "trees");
         let deadTrees = requiredWater - availableWater;
-        if (deadTrees > 0) {
-            bal.tree -= 2 * deadTrees;
-        }
+        if(deadTrees > 0) up1t("tree", -2 * deadTrees, "dehydration");
         if (bal.water < 2 && deadTrees <= 0 && bal.tree > 0) {
-            bal.tree -= 1;
+            up1t("tree", -1, "dehydration");
         }
-        bal.water -=
-            (availableWater < requiredWater ? availableWater : requiredWater) *
-            treeWaterCost;
+        up1t("water",
+            -(availableWater < requiredWater ? availableWater : requiredWater) *
+            treeWaterCost,
+            "trees",
+        );
 
         if (bal.seed > 0) {
             game.uncoveredCounters.tree = true;
@@ -192,31 +204,30 @@ const gameContent: GameContent = {
             let availableSeed = bal.seed;
             let used = Math.min(availableWater, Math.ceil(availableSeed / 100));
             if (used >= 1) {
-                bal.seed -= used;
-                bal.tree += used;
-                bal.water -= used;
+                up1t("seed", -used, "growth");
+                up1t("tree", used, "growth");
+                up1t("water", -used, "growth");
             }
         } else {
-            bal.seed = 0;
+            set1t("seed", 0);
         }
         
         if(bal.merchant >= 1 && bal.tick % 10 == 5) {
-            const buycount = Math.min(Math.floor(bal.apple / 80), bal.merchant);
-            bal.apple -= buycount * 80;
-            bal.credit += buycount * 1;
-            bal["ceo apples"] += buycount * 2; // ceo takes 2 apples from every merchant sell
+            const buycount = Math.min(bal.apple / 80 |0, bal.merchant);
+            up10t("apple", -buycount * 80, "merchant");
+            up10t("credit", buycount * 1, "merchant");
+            up10t("ceo apples", buycount * 2, "merchant"); // ceo takes 2 apples from every merchant sell
         }
         
         if(bal.mosh > 0) {
             const prevmosh = bal.mosh;
-            bal.mosh *= 999/1000;
-            bal.mosh = Math.floor(bal.mosh);
-            bal.goop += (prevmosh - bal.mosh);
+            const newmosh = prevmosh * (999 / 1000) |0;
+            const diff = prevmosh - newmosh;
+
+            up1t("mosh", -diff, "mosh decay");
+            up1t("goop", diff, "mosh decay");
         }else{
-            bal.mosh = 0;
-        }
-        if(bal.goop > 0) {
-            game.uncoveredCounters.goop = true;
+            set1t("mosh", 0);
         }
     },
 };

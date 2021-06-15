@@ -9,9 +9,10 @@ export {};
 declare global {
     interface Window {
         game: {
-            cheat: {
-                money: ObjectMap<number>;
-            };
+            // cheat: {
+            //     money: ObjectMap<number>;
+            // };
+            cheat: Game,
             restart: () => void;
         };
     }
@@ -76,8 +77,36 @@ body {
     color: rgb(200, 200, 200);
     transition: 0.1s color ease-in-out, 0.1s box-shadow ease-in-out;
     background-color: white;
-    min-height: 100px;
+    min-height: 122px;
 }
+.counter {
+    appearence: none;
+    font-size: 100%;
+    font-family: inherit;
+    text-align: left;
+}
+.counter > div {
+    width: 100%;
+    height: 100%;
+}
+.counter.uncovered:hover{
+    border-width: 2px;
+    padding: 9px;
+}
+.counter.uncovered:active{
+    border-width: 3px;
+    padding: 8px;
+}
+.counter.showdiff .counterdescription {
+    display: none;
+}
+.counter.showdiff .counterreason {
+    display: block;
+}
+.counterreason {
+    display: none;
+}
+.counterreason > ul {margin: 0; padding: 0; list-style-position: inside}
 .counter {
     border: 1px solid rgb(200, 200, 200);
 }
@@ -157,14 +186,20 @@ export type CounterConfigurationItem = {
     displaySuffix?: string;
     displayPrefix?: string;
     initialValue?: number;
+    unlockHidden?: boolean;
 };
 export type CounterConfig = ObjectMap<CounterConfigurationItem>;
+export type TransferInfo = {
+    [reason: string]: {diff: number, frequency: number, lastSet: number},
+};
 export type Game = {
     tick: number;
     money: ObjectMap<number>;
-    moneyHistory: ObjectMap<number>[];
+    moneyTransfer: ObjectMap<TransferInfo>;
     uncoveredCounters: ObjectMap<boolean>;
     counterConfig: CounterConfig;
+    counterState: ObjectMap<{showDiff: boolean}>;
+    cheatMode?: boolean;
     numberFormat: (
         currency: string,
         number: number,
@@ -216,7 +251,7 @@ function parseDesc(game: Game, desc: string) {
 function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
     let checkPrice = () => price.every(([k, v]) => game.money[k] >= v);
     let getUncovered = () => {
-        if (price.every(([k]) => k.startsWith("_") ? true : game.uncoveredCounters[k])) {
+        if (price.every(([k]) => game.counterConfig[k].unlockHidden ? true : game.uncoveredCounters[k])) {
             return true;
         }
         return false;
@@ -277,10 +312,11 @@ function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
         if(game.tick == lastClicked) return;
         lastClicked = game.tick;
         // TODO allow click and hold to buy at max speed
-        if (!checkPrice()) return;
+        if (!checkPrice() && !game.cheatMode) return;
 
         for (let [key, value] of effects) {
             game.money[key] += value;
+            (game.moneyTransfer[key] ??= {})["purchase"] = {diff: value, frequency: 1, lastSet: game.tick};
         }
 
         if(e.clientX) spawnParticle(e.clientX, e.clientY, "+");
@@ -295,7 +331,7 @@ function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
     };
     
 return html`
-    <button ref=${ref} class=${`button ${isUncovered && "uncovered"}`} disabled=${purchasable ? undefined : true} onclick=${onclick}>
+    <button ref=${ref} class=${`button ${isUncovered && "uncovered"}`} disabled=${purchasable || game.cheatMode ? undefined : true} onclick=${onclick}>
         <div class="buttonpurchase">
             ${isUncovered ? details.name : "???"}
         </div>
@@ -308,32 +344,42 @@ return html`
 
 function Counter(game: Game, currency: string, description: string) {
     const isRevealed = game.uncoveredCounters[currency];
-    
+    const state = (game.counterState[currency] ??= {showDiff: false});
+
     let displayTitle = html`???`;
     let displayDescription = html`This counter has not been discovered yet.`;
+    let displayReason = html`<ul><li>This counter has not been discovered yet.</li></ul>`;
     if (isRevealed) {
         displayDescription = parseDesc(game, description);
         
         let count = game.money[currency];
-        let history = [...game.moneyHistory.map(h => h[currency]), count];
-        let average = 0;
-        let prevItem;
-        for (let item of history) {
-            if (prevItem !== undefined) {
-                average += Number(item - prevItem);
-            }
-            prevItem = item;
-        }
-        average /= history.length - 1;
-        average = Math.round(average);
+        const reasons = Object.entries(game.moneyTransfer[currency] ?? {}).filter(([k, v]) => game.tick < v.lastSet + v.frequency && v.diff !== 0);
+
+        const average = reasons.reduce((t, [k, v]) => t + v.diff / v.frequency, 0);
+        const avgfmt = game.numberFormat(currency, average);
+        const titleText = currency + ": " + game.numberFormat(currency, count, false) + (average && !state.showDiff ? " ("+avgfmt+")" : "");
+
+        const reasonsContent = reasons.map(([k, v]) => {
+            return html`
+                <li>${game.numberFormat(currency, v.diff) + "/"+(v.frequency === 1 ? "" : v.frequency)+"t: "+k}</li>
+            `;
+        });
+        if(reasonsContent.length === 0) reasonsContent.push(html`<li><i>Not changing</i></li>`);
+        displayReason = html`<div>Change: ${avgfmt}/t</div><ul>${reasonsContent}</ul>`;
         
-        displayTitle = html`${currency}: ${game.numberFormat(currency, count, false)}${average?html`&nbsp;(${game.numberFormat(currency, average)})`:""}`;
+        displayTitle = html`${titleText}`;
+    }
+    const onclick = () => {
+        state.showDiff = !state.showDiff;
     }
 return html`
-    <div class=${`counter `+(isRevealed ? "uncovered" : "")}>
-        <div class="counterheader">${displayTitle}</div>
-        <div class="counterdescription">${displayDescription}</div>
-    </div>
+    <button class=${`counter`+(isRevealed ? " uncovered" : "")+(state.showDiff ? " showdiff" : "")} onclick=${onclick}>
+        <div>
+            <div class="counterheader">${displayTitle}</div>
+            <div class="counterdescription">${displayDescription}</div>
+            <div class="counterreason">${displayReason}</div>
+        </div>
+    </button>
 `}
 
 export function splitNumber(
@@ -369,7 +415,8 @@ function Game() {
         tick: 0,
         money: {},
         counterConfig: {},
-        moneyHistory: [],
+        counterState: {},
+        moneyTransfer: {},
         uncoveredCounters: { stamina: true },
         numberFormat: (currency, n, showSign = true) => {
             let currencyDetails = game.counterConfig[currency] || {};
@@ -379,13 +426,13 @@ function Game() {
             let prefix = currencyDetails.displayPrefix || "";
 
             if (displayMode === "percentage") {
-                let resStr = (n / 100).toLocaleString(undefined, {
+                let resStr = Math.abs(n / 100).toLocaleString(undefined, {
                     style: "percent",
                 });
                 let sign = Math.sign(n);
 
                 return (
-                    (showSign && sign === 1 ? "+" : "") +
+                    (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
                     resStr +
                     (suffix || "")
                 );
@@ -417,31 +464,35 @@ function Game() {
                 );
             }
             if (displayMode === "decimal") {
-                let resV = (n / 100).toLocaleString(undefined, {
+                let resV = Math.abs(n / 100).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                 });
+                const sign = Math.sign(n);
                 return (
-                    (showSign && Math.sign(+resV) === 1 ? "+" : "") +
+                    (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
+                    prefix +
                     resV +
                     suffix
                 );
             }
             if (displayMode === "integer") {
-                let resV = n.toLocaleString(undefined, {});
+                let resV = Math.abs(n).toLocaleString(undefined, {});
+                const sign = Math.sign(n);
                 return (
-                    (showSign && Math.sign(+resV) === 1 ? "+" : "") +
+                    (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
                     prefix +
                     resV +
                     suffix
                 );
             }
             if (displayMode === "integernocomma1k") {
-                let resV = n.toLocaleString(undefined, { });
+                let resV = Math.abs(n).toLocaleString(undefined, { });
                 if(n >= 1000 && n < 10_000) {
-                    resV = n.toLocaleString(undefined, { useGrouping: false });
+                    resV = Math.abs(n).toLocaleString(undefined, { useGrouping: false });
                 }
+                const sign = Math.sign(n);
                 return (
-                    (showSign && Math.sign(+resV) === 1 ? "+" : "") +
+                    (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
                     prefix +
                     resV +
                     suffix
@@ -523,12 +574,13 @@ function Game() {
     tickHandlers.push(() => rerender());
 
     window.game = {
-        cheat: { money: new Proxy(game.money, {
-            set: (obj, prop, v) => {
-                if(!(window as any).__allow_cheating) throw new Error("nah");
-                return Reflect.set(obj, prop, v);
-            }
-        }) },
+        // cheat: { money: new Proxy(game.money, {
+        //     set: (obj, prop, v) => {
+        //         if(!(window as any).__allow_cheating) throw new Error("nah");
+        //         return Reflect.set(obj, prop, v);
+        //     }
+        // }) },
+        cheat: game,
         restart: () => {
             localStorage.clear();
             clearInterval(tickInterval);
@@ -539,9 +591,6 @@ function Game() {
 
     tickHandlers.push(() => {
         game.tick++;
-
-        game.moneyHistory.push({ ...game.money });
-        if (game.moneyHistory.length >= 5) game.moneyHistory.shift();
 
         if (game.tick % 50 === 0) {
             let newSaveID = +localStorage.getItem("lastsave")!;
