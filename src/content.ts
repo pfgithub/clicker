@@ -62,6 +62,12 @@ const gameContent: GameContent = {
         bacteria: {displayMode: "decimal"},
         swamp: {displayMode: "decimal"},
         rot: {displayMode: "integer"}, // passively produces spore0
+        mash: {displayMode: "decimal"},
+        mish: {displayMode: "decimal"},
+        spore_catalyst: {displayMode: "integer", title: "⏺"},
+
+        mosh_shop_access: {displayMode: "boolean", title: "mosh shop access"},
+        bunsen_burner: {displayMode: "integer", title: "bunsen burner"},
 
         _ach_1: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
         _ach_2: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
@@ -86,7 +92,7 @@ const gameContent: GameContent = {
         }),
         button("goop maker", {
             requires: { goop: 2000_00 }, // requires you to produce your own mosh spores past the original 10
-            price: { _ach_3: 1 },
+            price: { _ach_4: 1 },
             effects: { achievement: 1 },
         }),
         ["separator"],
@@ -172,6 +178,10 @@ const gameContent: GameContent = {
             price: {credit: 500_000},
             effects: {seed: 1_000_000_00},
         }),
+        button("buy markets in bulk", {
+            price: {credit: 10_000, gold: 100 * 25_00},
+            effects: {market: 100},
+        }),
         ["spacer"],
         counter("mosh", "has a half life of 700 ticks, decaying into {goop}"),
         counter("goop", "goop"), // you can get a maximum of 1,000 goop until you unlock mosh spores. make sure it's not possible to lose goop.
@@ -183,6 +193,7 @@ const gameContent: GameContent = {
             price: {mosh: 10_00},
             effects: {goop: 10_00},
         }),
+        ["spacer"],
         counter("mosh_spore", "spores to produce mosh"),
         counter("mosh_spore_0", "spore seeds"),
         counter("rot", "substrate that passively produces {mosh_spore_0}"),
@@ -209,6 +220,60 @@ const gameContent: GameContent = {
             effects: {rot: 1},
         }),
         // I should do some stuff using stamina to convert goop into materials or something
+        ["spacer"],
+        counter("mish", "mished goop"),
+        counter("mash", "mashed mosh"),
+        button("mash mosh", {
+            requires: {mosh_spore_0: 10_000_00},
+            price: {mosh: 100_00, stamina: 100},
+            effects: {mash: 10_00},
+        }), // max. 90_00
+        button("mish goop", {
+            requires: {mash: 90_00},
+            price: {goop: 100_00},
+            effects: {mish: 10_00},
+        }),
+        ["spacer"],
+        counter("spore_catalyst", "catalyst"),
+        button("create catalyst", {
+            price: {mish: 1_00, mash: 9_00},
+            effects: {spore_catalyst: 10},
+        }),
+        // each spore catalyst must produce 11-100 spore seeds or something
+        button("apply catalyst", {
+            price: {spore_catalyst: 1, mosh_spore_0: 1_00, stamina: 10},
+            effects: {mosh_spore: 1},
+        }),
+        // you can buy a heater in the future to auto convert catalyst + spore0 to spores
+        ["spacer"],
+        // make a "refill stamina" button idk
+        // it can just do effects: {stamina: 100%}
+        // should I have a button to add like 10% stamina from the start? that'd
+        // make the water section a bit easier but idk it makes you more in control
+        counter("mosh_shop_access", "shop access pass"),
+        button("get shop access", {
+            price: {goop: 2_000_00, gold: 100_000_00},
+            effects: {mosh_shop_access: 1},
+        }),
+        button("sell shop access", {
+            price: {mosh_shop_access: 1},
+            effects: {goop: 1_000_00}, // if you *really* mess up you can get back your 1,000 goop you started with
+        }),
+
+        // ok let's gate everything past here on having at least 1,000 goop b/c as long as you
+        // have at least 1k goop you can repeat the above process and increase how much goop you have
+        ["spacer"],
+        counter("bunsen_burner", "catalyzes {mosh_spore} automatically. +{mosh_spore|1} each tick, costing {spore_catalyst|1} {spore_catalyst}, {mosh_spore_0|100} {mosh_spore_0}"),
+        button("purchase bunsen burner", {
+            requires: {mosh_shop_access: 1},
+            price: {gold: 10_000_00},
+            effects: {bunsen_burner: 1},
+        }),
+        // oh actually
+        // let's make a mosh shop access pass
+        // you purchase it for 2,000 goop and 100,000 gold and you can sell it at any time for 2,000 goop
+
+        // ok now that you're in the shop you should probably been given new methods of gold accumulation
     ],
     gameLogic: (game: Game) => {
         // logic

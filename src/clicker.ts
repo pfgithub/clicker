@@ -286,7 +286,7 @@ export function numberFormat(game: Game, currency: string, n: number, showSign: 
         );
     }
     if (displayMode === "boolean") {
-        return n === 0 ? "doesn't have" : "has";
+        return n === 0 ? "doesn't have" : (n > 1 ? n+"×" : "") + "has";
     }
     if (displayMode === "inverse_boolean") {
         return n === 0 ? "has" : "doesn't have";
@@ -381,7 +381,7 @@ function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
     return html`
         <div>requires: ${requires.map(([name, cost]) => {
         return html`
-            <span class=${game.money[name] >= cost ? "buyable" : "toexpensive"}>
+            <span class=${game.money[name] >= cost ? "buyable" : "tooexpensive"}>
                 (${numberFormat(game, name, cost, false)} ${titleFormat(game, name)})
             </span>`;
         })}</div>
