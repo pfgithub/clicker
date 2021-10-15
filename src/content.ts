@@ -183,7 +183,7 @@ const gameContent: GameContent = {
             effects: {market: 100},
         }),
         ["spacer"],
-        counter("mosh", "has a half life of 700 ticks, decaying into {goop}"),
+        counter("mosh", "has a half life of 700 ticks, decaying into goop"),
         counter("goop", "goop"), // you can get a maximum of 1,000 goop until you unlock mosh spores. make sure it's not possible to lose goop.
         button("mosh seeds", { // TODO reveal button title once seed is reveaed, even if mosh spore isn't revealed
             price: {seed: 1_000_00, mosh_spore: 1},
