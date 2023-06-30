@@ -100,7 +100,7 @@ const gameContent: GameContent = {
         // later I could have a "relax" thing that increases your max stamina
         counter("gold", "gold lets you purchase things"),
         button("fish gold from wishing well", {
-            price: { stamina: 5 },
+            price: { stamina: 2 },
             effects: { gold: 100 },
         }),
         counter("market", "each market generates {gold|1} gold per tick"),
