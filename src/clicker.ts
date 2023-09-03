@@ -436,9 +436,9 @@ function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
         // else spawn particle in the center
         emit();
     };
-    
+
 return html`
-    <button ref=${ref} class=${`button ${isUncovered && "uncovered"}`} disabled=${purchasable || game.cheatMode ? undefined : true} onclick=${onclick}>
+    <button onmousedown=${onmousedown} onmouseup=${onmouseup} ref=${ref} class=${`button ${isUncovered && "uncovered"}`} disabled=${purchasable || game.cheatMode ? undefined : true} onclick=${onclick}>
         <div class="buttonpurchase">
             ${isUncovered ? details.name : "???"}
         </div>
