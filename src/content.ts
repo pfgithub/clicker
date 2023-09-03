@@ -377,8 +377,12 @@ const gameContent: GameContent = {
             up1t("goop", diff, "mosh decay");
         }
 
-        {
-            const buycount = Math.min(bal.spore_catalyst / 1 |0, bal.mosh_spore_0 / 100 |0);
+        if(bal.bunsen_burner > 0) {
+            const buycount = Math.min(
+                bal.spore_catalyst / 1 |0,
+                bal.mosh_spore_0 / 100 |0,
+                bal.bunsen_burner / 1 |0,
+            );
             up1t("spore_catalyst", -buycount, "bunsen burner");
             up1t("mosh_spore_0", -buycount * 100, "bunsen burner");
             up1t("mosh_spore", buycount, "bunsen burner");
