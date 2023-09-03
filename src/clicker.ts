@@ -1,9 +1,8 @@
 import { counterConfig, gameConfig, gameLogic } from "./content";
 import * as μhtml from "uhtml";
+import { ButtonDetails, CB, Game, GameConfigurationItem, GameCore } from "./core";
 
 const {html} = μhtml;
-
-export type CB = () => void;
 
 export {};
 declare global {
@@ -298,36 +297,6 @@ export function numberFormat(game: Game, currency: string, n: number, showSign: 
     }
     throw new Error("invalid display mode: " + displayMode);
 }
-export type Game = {
-    tick: number;
-    money: ObjectMap<number>;
-    moneyTransfer: ObjectMap<TransferInfo>;
-    uncoveredCounters: ObjectMap<boolean>;
-    counterConfig: CounterConfig;
-    counterState: ObjectMap<{showDiff: boolean}>;
-    cheatMode?: boolean;
-};
-export type Price = ObjectMap<number>;
-export type ManualButtonDetails = {
-    price?: Price;
-    effects?: Price;
-    requires?: Price;
-    name: string;
-};
-export type ButtonDetails = ManualButtonDetails & {
-    id: string & { __unique: true };
-};
-export type GameConfigurationItem =
-    | ["counter", string, string]
-    | ["button", ManualButtonDetails]
-    | ["separator"]
-    | ["spacer"];
-
-export type GameContent = {
-    counterConfig: CounterConfig;
-    gameConfig: GameConfigurationItem[];
-    gameLogic: (game: Game) => void;
-};
 
 let uniqMap = new Map<any, boolean>();
 function uniq<T>(item: T): T & { __unique: true } {
@@ -414,8 +383,9 @@ function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
     }
     
     let ref = {current: undefined as any as HTMLElement};
-    let lastClicked = game.tick;
+    let lastClicked = -1; // this fn is re-called every update 
     let onclick = (e: MouseEvent) => {
+        console.log(game.tick, lastClicked);
         if(game.tick == lastClicked) return;
         lastClicked = game.tick;
         // TODO allow click and hold to buy at max speed
@@ -438,7 +408,7 @@ function BuyButton(game: Game, details: ButtonDetails, emit: () => void) {
     };
 
 return html`
-    <button onmousedown=${onmousedown} onmouseup=${onmouseup} ref=${ref} class=${`button ${isUncovered && "uncovered"}`} disabled=${purchasable || game.cheatMode ? undefined : true} onclick=${onclick}>
+    <button ref=${ref} class=${`button ${isUncovered && "uncovered"}`} disabled=${purchasable || game.cheatMode ? undefined : true} onclick=${onclick}>
         <div class="buttonpurchase">
             ${isUncovered ? details.name : "???"}
         </div>
@@ -498,70 +468,16 @@ export function splitNumber(
     return { decimal: +fullDecimal, integer: +fullInteger * Math.sign(number) };
 }
 
-export function Game() {
-    let gameUpdateHandlers: CB[] = [];
-    let tickHandlers: CB[] = [];
-
-    let tickInterval = setInterval(() => {
-        // gameTick();
-        tickHandlers.forEach(th => th());
-        emitGameUpdate();
-    }, 100);
-
-    function emitGameUpdate() {
-        gameUpdateHandlers.forEach(h => h());
-    }
-    
+export function GameUI(core: GameCore) {
     let gameroot = el("div");
     gameroot.classList.add("gameroot");
 
-    let saveID = +(localStorage.getItem("lastsave") || "0") + 1;
-    localStorage.setItem("lastsave", "" + saveID);
-
-    let game: Game = {
-        tick: 0,
-        money: {},
-        counterConfig: {},
-        counterState: {},
-        moneyTransfer: {},
-        uncoveredCounters: { stamina: true },
-    };
-
-    let savedGame = localStorage.getItem("save");
-    if (savedGame) {
-        let parsed;
-        try {
-            parsed = JSON.parse(savedGame);
-        } catch (e) {
-            localStorage.setItem("corrupted_save", savedGame);
-            console.log("Error loading savegame:", e, savedGame);
-        }
-        if (parsed) {
-            game.money = { ...game.money, ...parsed.money };
-            game.uncoveredCounters = {
-                ...game.uncoveredCounters,
-                ...parsed.uncoveredCounters,
-            };
-        }
-    }
-
-    // todo usages history so if you hoveer over (+0.1) it shows you where it's coming from
-    // todo per-item history. eg water should show history over 10 ticks instead of the default amount
-
-    game.counterConfig = counterConfig;
-
-    for (let [key, value] of Object.entries(counterConfig)) {
-        if (game.money[key] == null || isNaN(game.money[key])) {
-            game.money[key] = value.initialValue || 0;
-        }
-    }
-
     let renderItem = (confit: GameConfigurationItem) => {
         if (confit[0] === "counter") {
-            return Counter(game, confit[1], confit[2]);
+            return Counter(core.game, confit[1], confit[2]);
         } else if (confit[0] === "button") {
             let withID = confit[1] as ButtonDetails;
-            return BuyButton(game, withID, () => emitGameUpdate());
+            return BuyButton(core.game, withID, () => core.emitGameUpdate());
         } else if (confit[0] === "separator") {
             return html`<div class="line"></div>`;
         } else if (confit[0] === "spacer") {
@@ -589,62 +505,7 @@ export function Game() {
     } `;
 
     let rerender = () => μhtml.render(gameroot, render());
-    tickHandlers.push(() => rerender());
-
-    window.game = {
-        // cheat: { money: new Proxy(game.money, {
-        //     set: (obj, prop, v) => {
-        //         if(!(window as any).__allow_cheating) throw new Error("nah");
-        //         return Reflect.set(obj, prop, v);
-        //     }
-        // }) },
-        cheat: game,
-        restart: () => {
-            localStorage.clear();
-            clearInterval(tickInterval);
-            console.log("Reloading...");
-            location.reload();
-        },
-    };
-
-    tickHandlers.push(() => {
-        game.tick++;
-
-        if (game.tick % 50 === 0) {
-            let newSaveID = +localStorage.getItem("lastsave")!;
-            if (newSaveID !== saveID) {
-                document.body.innerHTML =
-                    "Uh oh! This page was opened on another tab. This page has been closed to prevent save conflicts.";
-                document.title = "closed";
-                window.close();
-                clearInterval(tickInterval);
-                throw -1;
-            }
-            localStorage.setItem(
-                "save",
-                JSON.stringify(
-                    {
-                        money: game.money,
-                        uncoveredCounters: game.uncoveredCounters,
-                    },
-                    null,
-                    "\t",
-                ),
-            );
-        }
-
-        for (let [currency, count] of Object.entries(game.money)) {
-            if (!Number.isInteger(count)) {
-                alert("Currency is not an integer, " +
-                    currency + " (value is " + count +
-                    ")",
-                );
-                game.money[currency] = Math.floor(count);
-            }
-        }
-
-        gameLogic(game);
-    });
+    const tickhandler_cleanup = core.onTick(() => rerender());
 
     return gameroot;
 }

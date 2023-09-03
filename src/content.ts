@@ -1,11 +1,5 @@
-import {
-    Game,
-    splitNumber,
-    GameContent,
-    GameConfigurationItem,
-    ManualButtonDetails,
-    Price,
-} from "./clicker";
+import { splitNumber } from "./clicker";
+import { Game, GameConfigurationItem, GameContent, Price } from "./core";
 
 function counter(title: string, description: string): GameConfigurationItem {
     return ["counter", title, description];
