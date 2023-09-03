@@ -336,7 +336,7 @@ const gameContent: GameContent = {
         }
         
         if(bal.merchant >= 1 && bal.tick % 10 == 5) {
-            const buycount = Math.min(bal.apple / 80 |0, bal.merchant);
+            const buycount = Math.min(Math.floor(bal.apple / 80), bal.merchant);
             up10t("apple", -buycount * 80, "merchant");
             up10t("credit", buycount * 1, "merchant");
             up10t("ceo apples", buycount * 2, "merchant"); // ceo takes 2 apples from every merchant sell
@@ -379,9 +379,9 @@ const gameContent: GameContent = {
 
         if(bal.bunsen_burner > 0) {
             const buycount = Math.min(
-                bal.spore_catalyst / 1 |0,
-                bal.mosh_spore_0 / 100 |0,
-                bal.bunsen_burner / 1 |0,
+                Math.floor(bal.spore_catalyst / 1),
+                Math.floor(bal.mosh_spore_0 / 100),
+                Math.floor(bal.bunsen_burner / 1),
             );
             up1t("spore_catalyst", -buycount, "bunsen burner");
             up1t("mosh_spore_0", -buycount * 100, "bunsen burner");
