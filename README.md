@@ -11,13 +11,6 @@ play at https://clicker.pfg.pw/
 run
 
 ```fish
-yarn install
+bun install
+bun run dev
 ```
-
-### watch build
-
-run `yarn watch` in one terminal and `yarn serve` in another
-
-### build
-
-run `yarn build --mode production`

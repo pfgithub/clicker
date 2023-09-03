@@ -27,7 +27,6 @@ function spawnParticle(x: number, y: number, text: string) {
     setTimeout(() => particle.remove(), 1000);
 }
 
-let main = document.getElementById("main") || document.body;
 let el = <K extends keyof HTMLElementTagNameMap>(
     name: K,
     cb?: (node: HTMLElementTagNameMap[K]) => void,
@@ -499,7 +498,7 @@ export function splitNumber(
     return { decimal: +fullDecimal, integer: +fullInteger * Math.sign(number) };
 }
 
-function Game() {
+export function Game() {
     let gameUpdateHandlers: CB[] = [];
     let tickHandlers: CB[] = [];
 
@@ -650,4 +649,3 @@ function Game() {
     return gameroot;
 }
 
-main.appendChild(Game());
