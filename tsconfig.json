@@ -10,7 +10,8 @@
         "resolveJsonModule": true,
         "declaration": true,
         "strict": true,
-        "jsx": "preserve"
+        "jsx": "preserve",
+        "jsxImportSource": "solid-js"
     },
     "include": ["src/**/*"]
 }
