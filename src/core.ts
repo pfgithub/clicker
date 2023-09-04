@@ -246,7 +246,7 @@ export type DisplayMode =
     | "hidden"
     | "integernocomma1k"
     | "inverse_boolean"
-;
+;//
 export type ObjectMap<T> = { [key: string]: T };
 export type CounterConfigurationItem = {
     displayMode: DisplayMode;
