@@ -378,3 +378,11 @@ export function getCounterChange(game: Game, currency: string): {
         change_reasons: reasons,
     };
 }
+
+export function addMoney(game: Game, name: string, count: number, period: number, reason: string): void {
+    game.money[name] += count;
+    (game.moneyTransfer[name] ??= {})[reason] = {diff: count, frequency: period, lastSet: game.tick};
+}
+export function setMoney(game: Game, name: string, count: number): void {
+    game.money[name] = count;
+}

@@ -1,4 +1,4 @@
-import { Game, GameConfigurationItem, GameContent, Price, splitNumber } from "./core";
+import { Game, GameConfigurationItem, GameContent, Price, addMoney, setMoney, splitNumber } from "./core";
 
 function counter(title: string, description: string): GameConfigurationItem {
     return ["counter", title, description];
@@ -272,16 +272,14 @@ const gameContent: GameContent = {
         // logic
         let bal = game.money as Readonly<{[key: string]: number}>;
         const up1t = (name: string, count: number, reason: string) => {
-            game.money[name] += count;
-            (game.moneyTransfer[name] ??= {})[reason] = {diff: count, frequency: 1, lastSet: game.tick};
+            addMoney(game, name, count, 1, reason);
         };
         // TODO post up10t regardless of if it's the 10t mark or not
         const up10t = (name: string, count: number, reason: string) => {
-            game.money[name] += count;
-            (game.moneyTransfer[name] ??= {})[reason] = {diff: count, frequency: 10, lastSet: game.tick};
+            addMoney(game, name, count, 10, reason);
         };
         const set1t = (name: string, count: number) => {
-            game.money[name] = count;
+            setMoney(game, name, count);
         };
         up1t("tick", 1, "advance");
         up1t("gold", bal.market, "markets");
