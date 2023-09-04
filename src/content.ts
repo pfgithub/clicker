@@ -59,7 +59,7 @@ const gameContent: GameContent = {
         mish: {displayMode: "decimal"},
         spore_catalyst: {displayMode: "integer", title: "⏺"},
 
-        mosh_shop_access: {displayMode: "boolean", title: "mosh shop access"},
+        mosh_shop_access: {displayMode: "integer", title: "shop access pass", displaySuffix: "×"},
         bunsen_burner: {displayMode: "integer", title: "bunsen burner"},
 
         _ach_1: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
@@ -244,13 +244,10 @@ const gameContent: GameContent = {
         // should I have a button to add like 10% stamina from the start? that'd
         // make the water section a bit easier but idk it makes you more in control
         counter("mosh_shop_access", "shop access pass"),
-        button("get shop access", {
+        button("buy shop access pass", {
+            requires: {goop: 3_000_00}, // make sure you can never go below 1_000_00
             price: {goop: 2_000_00, gold: 100_000_00},
             effects: {mosh_shop_access: 1},
-        }),
-        button("sell shop access", {
-            price: {mosh_shop_access: 1},
-            effects: {goop: 1_000_00}, // if you *really* mess up you can get back your 1,000 goop you started with
         }),
 
         // ok let's gate everything past here on having at least 1,000 goop b/c as long as you
@@ -258,8 +255,7 @@ const gameContent: GameContent = {
         ["spacer"],
         counter("bunsen_burner", "catalyzes {mosh_spore} automatically. +{mosh_spore|1} each tick, costing {spore_catalyst|1} {spore_catalyst}, {mosh_spore_0|100} {mosh_spore_0}"),
         button("purchase bunsen burner", {
-            requires: {mosh_shop_access: 1},
-            price: {gold: 10_000_00},
+            price: {mosh_shop_access: 1, gold: 10_000_00},
             effects: {bunsen_burner: 1},
         }),
         // oh actually
