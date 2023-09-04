@@ -8,9 +8,9 @@ let main = document.getElementById("main") || document.body;
 
 const core = newCore();
 
-if(location.hash === "#newui") {
-    render(() => App(core), main);
-}else{
+if(location.hash === "#oldui") {
     main.appendChild(GameUI(core));
+}else{
+    render(() => App(core), main);
 }
 
