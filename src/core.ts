@@ -391,7 +391,12 @@ export function getCounterChange(game: Game, currency: string): {
 
 export function addMoney(game: Game, name: string, count: number, period: number, reason: string): void {
     game.money[name] += count;
-    (game.moneyTransfer[name] ??= {})[reason] = {diff: count, frequency: period, lastSet: game.tick};
+    const moneytransfer = (game.moneyTransfer[name] ??= {});
+    if(moneytransfer[reason]?.lastSet === game.tick && moneytransfer[reason]?.frequency === period) {
+        moneytransfer[reason].diff += count;
+    }else{
+        moneytransfer[reason] = {diff: count, frequency: period, lastSet: game.tick};
+    }
 }
 export function setMoney(game: Game, name: string, count: number): void {
     game.money[name] = count;

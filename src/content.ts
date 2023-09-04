@@ -14,9 +14,15 @@ function button(
     return ["button", { name, ...details }];
 }
 
+/*
+ideas:
+- tick. a button that lets you purchase a tick (1× tick)
+- causes two ticks to be executed next tick
+*/
 const gameContent: GameContent = {
     counterConfig: {
         tick: { displayMode: "hidden" },
+        tick_add: { displayMode: "integer", title: "tick" },
         stamina: { initialValue: 100, displayMode: "percentage" }, // 100%, 50%
         tree: { displayMode: "numberpercentage" }, // 1
         seed: { displayMode: "numberpercentage" }, // 2 and 10%
@@ -90,6 +96,10 @@ const gameContent: GameContent = {
         }),
         ["separator"],
         counter("stamina", "stamina increases {stamina|1} per tick, max {stamina|100}"), // revealcondition: stamina < 10% (don't show stamina until you run out)
+        button("work", {
+            effects: {tick_add: 1},
+        }),
+        ["spacer"],
         // later I could have a "relax" thing that increases your max stamina
         counter("gold", "gold lets you purchase things"),
         button("fish gold from wishing well", {
@@ -265,19 +275,28 @@ const gameContent: GameContent = {
         // ok now that you're in the shop you should probably been given new methods of gold accumulation
     ],
     gameLogic: (game: Game) => {
-        // logic
-        let bal = game.money as Readonly<{[key: string]: number}>;
-        const up1t = (name: string, count: number, reason: string) => {
-            addMoney(game, name, count, 1, reason);
-        };
-        // TODO post up10t regardless of if it's the 10t mark or not
-        const up10t = (name: string, count: number, reason: string) => {
-            addMoney(game, name, count, 10, reason);
-        };
-        const set1t = (name: string, count: number) => {
-            setMoney(game, name, count);
-        };
+        return mainLogic(game);
+    },
+};
+function mainLogic(game: Game) {
+    let bal = game.money as Readonly<{[key: string]: number}>;
+    const up1t = (name: string, count: number, reason: string) => {
+        addMoney(game, name, count, 1, reason);
+    };
+    // TODO post up10t regardless of if it's the 10t mark or not
+    const up10t = (name: string, count: number, reason: string) => {
+        addMoney(game, name, count, 10, reason);
+    };
+    const set1t = (name: string, count: number) => {
+        setMoney(game, name, count);
+    };
+
+    const repeat_count = bal.tick_add + 1;
+    if(bal.tick_add > 0) up1t("tick_add", -bal.tick_add, "use");
+
+    for(let i = 0; i < repeat_count; i++) {
         up1t("tick", 1, "advance");
+
         up1t("gold", bal.market, "markets");
         if (bal.stamina < 100) up1t("stamina", 1, "rest");
         if (bal.stamina > 100) set1t("stamina", 100);
@@ -374,8 +393,8 @@ const gameContent: GameContent = {
             up1t("mosh_spore_0", -buycount * 100, "bunsen burner");
             up1t("mosh_spore", buycount, "bunsen burner");
         }
-    },
-};
+    }
+}
 
 export default gameContent;
 export let { counterConfig, gameConfig, gameLogic } = gameContent;
