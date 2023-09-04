@@ -193,12 +193,7 @@ function BuyButton(core: GameCore, details: ButtonDetails) {
     
     let requires = Object.entries(details.requires || {});
     let justPrice = Object.entries(details.price || {});
-    let price = [...justPrice, ...requires];
     let justEffects = Object.entries(details.effects || {});
-    let effects = [
-        ...justEffects,
-        ...justPrice.map(([k, v]) => [k, -v] as const),
-    ];
     
     let isUncovered = getUncovered();
     

@@ -97,7 +97,7 @@ export function newCore(): GameCore {
         //         return Reflect.set(obj, prop, v);
         //     }
         // }) },
-        cheat: game,
+        cheat: game, // new Proxy( set(reflect.set, game.cheated = true) )
         restart: () => {
             localStorage.clear();
             clearInterval(tickInterval);
@@ -106,10 +106,16 @@ export function newCore(): GameCore {
         },
     };
 
-    let purchased_this_tick = new Set<ButtonDetails>();
+    let purchased_this_tick = false;
+    let before_next_tick: CB[] = [];
     tickHandlers.push(() => {
+        for(const item of before_next_tick) {
+            item();
+        }
+        before_next_tick = [];
+
         game.tick++;
-        purchased_this_tick = new Set();
+        purchased_this_tick = false;
 
         if (game.tick % 50 === 0) {
             let newSaveID = +localStorage.getItem("lastsave")!;
@@ -193,9 +199,7 @@ export function newCore(): GameCore {
         },
 
         purchase(details) {
-            if(purchased_this_tick.has(details)) return false;
-            purchased_this_tick.add(details);
-           
+            if(purchased_this_tick) return false;
             if (!game.cheatMode && !core.checkPurchasable(details)) return false;
 
             const justPrice = Object.entries(details.price || {});
@@ -205,11 +209,14 @@ export function newCore(): GameCore {
                 ...justPrice.map(([k, v]) => [k, -v] as const),
             ];
 
-            for (let [key, value] of effects) {
-                game.money[key] += value;
-                (game.moneyTransfer[key] ??= {})["purchase"] = {diff: value, frequency: 1, lastSet: game.tick};
-            }
+            before_next_tick.push(() => {
+                for (let [key, value] of effects) {
+                    game.money[key] += value;
+                    (game.moneyTransfer[key] ??= {})["purchase"] = {diff: value, frequency: 1, lastSet: game.tick};
+                }
+            });
 
+            purchased_this_tick = true;
             return true;
         },
     };

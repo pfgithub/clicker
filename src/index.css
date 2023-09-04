@@ -25,3 +25,7 @@ html {
 summary {
     cursor: pointer;
 }
+
+*:disabled {
+    opacity: 0.5;
+}
