@@ -211,8 +211,7 @@ export function newCore(): GameCore {
 
             before_next_tick.push(() => {
                 for (let [key, value] of effects) {
-                    game.money[key] += value;
-                    (game.moneyTransfer[key] ??= {})["purchase"] = {diff: value, frequency: 1, lastSet: game.tick};
+                    addMoney(game, key, value, 1, "purchase");
                 }
             });
 
@@ -260,6 +259,10 @@ export type CounterConfigurationItem = {
 export type CounterConfig = ObjectMap<CounterConfigurationItem>;
 export type TransferInfo = {
     [reason: string]: {diff: number, frequency: number, lastSet: number},
+     // this should probably be an array of transfers that occured last frame
+     // and then cleared automatically
+     // not sure why it's like this - currently you can't write the same transfer name twice
+     // the main tick fn could clear it of anything expired
 };
 export function titleFormat(game: Game, currency: string): string {
     if(!game.uncoveredCounters[currency]) return "???";
