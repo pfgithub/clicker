@@ -1,11 +1,13 @@
-import { CounterConfig, ObjectMap, TransferInfo } from "./clicker";
-import { counterConfig, gameLogic } from "./content";
+import { counterConfig, gameConfig, gameLogic } from "./content";
 
 export type GameCore = {
     game: Game,
 
-    emitGameUpdate(): void,
     onTick(cb: () => void): () => void,
+
+    checkPurchasable(details: ButtonDetails): boolean,
+    checkUncovered(details: ButtonDetails): boolean,
+    purchase(details: ButtonDetails): boolean,
 };
 
 export type CB = () => void;
@@ -16,7 +18,6 @@ export type Game = {
     moneyTransfer: ObjectMap<TransferInfo>;
     uncoveredCounters: ObjectMap<boolean>;
     counterConfig: CounterConfig;
-    counterState: ObjectMap<{showDiff: boolean}>;
     cheatMode?: boolean;
 };
 export type Price = ObjectMap<number>;
@@ -27,7 +28,7 @@ export type ManualButtonDetails = {
     name: string;
 };
 export type ButtonDetails = ManualButtonDetails & {
-    id: string & { __unique: true };
+    // id: string & { __unique: true };
 };
 export type GameConfigurationItem =
     | ["counter", string, string]
@@ -42,18 +43,12 @@ export type GameContent = {
 };
 
 export function newCore(): GameCore {
-    let gameUpdateHandlers: CB[] = [];
     let tickHandlers: CB[] = [];
 
     let tickInterval = setInterval(() => {
         // gameTick();
         tickHandlers.forEach(th => th());
-        emitGameUpdate();
     }, 100);
-
-    function emitGameUpdate() {
-        gameUpdateHandlers.forEach(h => h());
-    }
 
     let saveID = +(localStorage.getItem("lastsave") || "0") + 1;
     localStorage.setItem("lastsave", "" + saveID);
@@ -62,7 +57,6 @@ export function newCore(): GameCore {
         tick: 0,
         money: {},
         counterConfig: {},
-        counterState: {},
         moneyTransfer: {},
         uncoveredCounters: { stamina: true },
     };
@@ -112,8 +106,10 @@ export function newCore(): GameCore {
         },
     };
 
+    let purchased_this_tick = new Set<ButtonDetails>();
     tickHandlers.push(() => {
         game.tick++;
+        purchased_this_tick = new Set();
 
         if (game.tick % 50 === 0) {
             let newSaveID = +localStorage.getItem("lastsave")!;
@@ -149,12 +145,27 @@ export function newCore(): GameCore {
         }
 
         gameLogic(game);
+
+        // uncover counters
+        for (let entry of gameConfig) {
+            if(entry[0] === "button") {
+                const purchasable = core.checkPurchasable(entry[1]);
+                const uncovered = core.checkUncovered(entry[1]);
+
+                if(purchasable && uncovered) {
+                    const effects = Object.entries(entry[1].effects ?? {});
+                    
+                    for (let [name] of effects) {
+                        game.uncoveredCounters[name] = true;
+                    }
+                }
+            }
+        }
     });
 
-    return {
+    const core: GameCore = {
         game: game,
 
-        emitGameUpdate: emitGameUpdate,
         onTick: (cb) => {
             tickHandlers.push(cb);
             return () => {
@@ -162,5 +173,208 @@ export function newCore(): GameCore {
                 if(cb_pos != -1) tickHandlers.splice(cb_pos, 1);
             };
         },
+
+        checkPurchasable(details) {
+            const requires = Object.entries(details.requires || {});
+            const justPrice = Object.entries(details.price || {});
+            const price = [...justPrice, ...requires];
+
+            return price.every(([k, v]) => game.money[k] >= v)
+        },
+        checkUncovered(details) {
+            const requires = Object.entries(details.requires || {});
+            const justPrice = Object.entries(details.price || {});
+            const price = [...justPrice, ...requires];
+
+            if (price.every(([k]) => game.counterConfig[k].unlockHidden ? true : game.uncoveredCounters[k])) {
+                return true;
+            }
+            return false;
+        },
+
+        purchase(details) {
+            if(purchased_this_tick.has(details)) return false;
+            purchased_this_tick.add(details);
+           
+            if (!game.cheatMode && !core.checkPurchasable(details)) return false;
+
+            const justPrice = Object.entries(details.price || {});
+            const justEffects = Object.entries(details.effects || {});
+            const effects = [
+                ...justEffects,
+                ...justPrice.map(([k, v]) => [k, -v] as const),
+            ];
+
+            for (let [key, value] of effects) {
+                game.money[key] += value;
+                (game.moneyTransfer[key] ??= {})["purchase"] = {diff: value, frequency: 1, lastSet: game.tick};
+            }
+
+            return true;
+        },
+    };
+    return core;
+}
+
+let descCache: {[key: string]: string} = {};
+export function parseDesc(game: Game, desc: string): string {
+    descCache[desc] ??= `${desc.replace(/{([^}]+?)}/g, (_, a) => {
+        const split = a.split("|");
+        if(split.length === 2) {
+            const [b, c] = split;
+            const number = +c.split("_").join("");
+            return numberFormat(game, b, number, false);
+        }else{
+            return titleFormat(game, split[0]);
+        }
+    })}`;
+    return descCache[desc];
+}
+
+export type DisplayMode =
+    | "percentage"
+    | "numberpercentage"
+    | "decimal"
+    | "integer"
+    | "boolean"
+    | "hidden"
+    | "integernocomma1k"
+    | "inverse_boolean"
+;
+export type ObjectMap<T> = { [key: string]: T };
+export type CounterConfigurationItem = {
+    displayMode: DisplayMode;
+    displaySuffix?: string;
+    displayPrefix?: string;
+    initialValue?: number;
+    unlockHidden?: boolean;
+    title?: string;
+};
+export type CounterConfig = ObjectMap<CounterConfigurationItem>;
+export type TransferInfo = {
+    [reason: string]: {diff: number, frequency: number, lastSet: number},
+};
+export function titleFormat(game: Game, currency: string): string {
+    if(!game.uncoveredCounters[currency]) return "???";
+    const currencyDetails = game.counterConfig[currency];
+    if(!currencyDetails) return "EROR_TITLE«"+currency+"»";
+    return currencyDetails.title ?? currency;
+}
+
+export function splitNumber(
+    number: number,
+): { decimal: number; integer: number } {
+    let numberString = number.toLocaleString("en-US", { useGrouping: false });
+    let fullDecimal = numberString.slice(-2).replace("-", "");
+    let fullInteger = numberString.slice(0, -2).replace("-", "");
+    return { decimal: +fullDecimal, integer: +fullInteger * Math.sign(number) };
+}
+export function numberFormat(game: Game, currency: string, n: number, showSign: boolean = true): string {
+    let currencyDetails = game.counterConfig[currency] || {};
+
+    let displayMode = currencyDetails.displayMode || "error";
+    let suffix = currencyDetails.displaySuffix || "";
+    let prefix = currencyDetails.displayPrefix || "";
+
+    if (displayMode === "percentage") {
+        let resStr = Math.abs(n / 100).toLocaleString(undefined, {
+            style: "percent",
+        });
+        let sign = Math.sign(n);
+
+        return (
+            (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
+            resStr +
+            (suffix || "")
+        );
+    }
+    if (displayMode === "numberpercentage") {
+        let split = splitNumber(n);
+        let resPercent = (split.decimal / 100).toLocaleString(
+            undefined,
+            {
+                style: "percent",
+            },
+        );
+        let resNumber = Math.abs(split.integer).toLocaleString(
+            undefined,
+        );
+
+        let showsZero = n === 0;
+        let sign = Math.sign(n);
+
+        return (
+            (showSign && sign === 1 ? "+" : sign === -1 ? "-" : "") +
+            [
+                split.integer !== 0 ? resNumber + (suffix || "") : "",
+                split.decimal === 0 ? "" : resPercent,
+                showsZero ? "0" : "",
+            ]
+                .filter(m => m)
+                .join(" and ")
+        );
+    }
+    if (displayMode === "decimal") {
+        let resV = Math.abs(n / 100).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+        });
+        const sign = Math.sign(n);
+        return (
+            (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
+            prefix +
+            resV +
+            suffix
+        );
+    }
+    if (displayMode === "integer") {
+        let resV = Math.abs(n).toLocaleString(undefined, {});
+        const sign = Math.sign(n);
+        return (
+            (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
+            prefix +
+            resV +
+            suffix
+        );
+    }
+    if (displayMode === "integernocomma1k") {
+        let resV = Math.abs(n).toLocaleString(undefined, { });
+        if(n >= 1000 && n < 10_000) {
+            resV = Math.abs(n).toLocaleString(undefined, { useGrouping: false });
+        }
+        const sign = Math.sign(n);
+        return (
+            (showSign ? (sign === 1 ? "+" : sign === -1 ? "-" : "") : "") +
+            prefix +
+            resV +
+            suffix
+        );
+    }
+    if (displayMode === "boolean") {
+        return n === 0 ? "doesn't have" : (n > 1 ? n+"×" : "") + "has";
+    }
+    if (displayMode === "inverse_boolean") {
+        return n === 0 ? "has" : "doesn't have";
+    }
+    // integer_e = 1.00e0 9.00e0 1.00e1 9.90e1 1.00e2 9.99e2...
+    if (displayMode === "hidden") {
+        return "Oops! You should never see this!";
+    }
+    if (displayMode === "error") {
+        return "ERR«"+currency+"»";
+    }
+    throw new Error("invalid display mode: " + displayMode);
+}
+
+export function getCounterChange(game: Game, currency: string): {
+    average_change: number,
+    change_reasons: [string, {diff: number, frequency: number, lastSet: number}][],
+} {
+    const reasons = Object.entries(game.moneyTransfer[currency] ?? {}).filter(([k, v]) => game.tick <= v.lastSet + v.frequency && v.diff !== 0);
+
+    const average = reasons.reduce((t, [k, v]) => t + v.diff / v.frequency, 0);
+
+    return {
+        average_change: average,
+        change_reasons: reasons,
     };
 }
