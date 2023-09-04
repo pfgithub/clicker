@@ -130,14 +130,21 @@ function Counter(core: GameCore, currency: string, counter_desc: string): JSX.El
 
     // consider counter descriptions on hover rather than click
 
-    return <Show when={is_revealed()} fallback={<>
-        <div class="px-2">locked counter</div>
-    </>}>
-        <details class="block" open={is_open()} onToggle={v => setOpen(v.currentTarget.open)}>
+    return <>
+        <details aria-disabled={!is_revealed()} tabindex={!is_revealed() ? -1 : 0} class={"block "+(!is_revealed() ? "pointer-events-none opacity-40 select-none" : "")} open={is_revealed() && is_open()} onToggle={v => {
+            if(!is_revealed()) {
+                setOpen(false);
+                v.currentTarget.open = false;
+                return;
+            }
+            setOpen(v.currentTarget.open);
+        }}>
             <summary class={(pointer_coarse() ? "py-2" : "") + " hover:bg-gray-200 user-select-none px-2 user-select-none "+(is_open() ? "bg-gray-100" : "")}>
-                {titleFormat(game(), currency)}{": "}
-                {numberFormat(game(), currency, count(), false)}
-                {average_change().avg ? " ("+numberFormat(game(), currency, average_change().avg)+")" : ""}
+                <Show when={is_revealed()} fallback={"???"}>
+                    {titleFormat(game(), currency)}{": "}
+                    {numberFormat(game(), currency, count(), false)}
+                    {average_change().avg ? " ("+numberFormat(game(), currency, average_change().avg)+")" : ""}
+                </Show>
             </summary>
             <div class={(pointer_coarse() ? "py-2 " : "") + "px-2 text-left bg-gray-50"}>
                 <div>{parseDesc(game(), counter_desc)}</div>
@@ -150,7 +157,7 @@ function Counter(core: GameCore, currency: string, counter_desc: string): JSX.El
                 </ul>
             </div>
         </details>
-    </Show>;
+    </>;
 }
 
 function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
@@ -165,9 +172,7 @@ function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
     const justPrice = Object.entries(entry.price || {});
     const justEffects = Object.entries(entry.effects || {});
 
-    return <Show when={getUncovered()} fallback={<>
-        <div class="px-2">locked</div>
-    </>}>
+    return <>
         <button class={(pointer_coarse() ? "py-2" : "" )+ " px-2 block w-full text-left disabled:opacity-50 " + (checkPurchasable() ? "hover:bg-gray-200 focus:bg-gray-200 active:bg-gray-300" : "")} disabled={!checkPurchasable()} onClick={(e) => {
             if(core.purchase(entry)) {
                 if(e.clientX) spawnParticle(e.clientX, e.clientY, "+");
@@ -179,7 +184,9 @@ function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
                 }
             }
         }}>
-            <span class={"font-bold "+(checkPurchasable() ? "underline text-blue-600" : "")}>{entry.name}</span>
+            <span class={"font-bold "+(checkPurchasable() ? "underline text-blue-600" : "")}>
+                {!getUncovered() ? "locked" : entry.name}
+            </span>
             <Show when={requires.length > 0}>
                 {pointer_coarse() ? <div /> : " / "}<span class="">requires:{" "}</span>
                 {requires.map(([name, cost]): JSX.Element => <>
@@ -198,12 +205,12 @@ function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
             </Show>
             <Show when={justEffects.length > 0}>
                 {pointer_coarse() ? <div /> : " / "}<span class="">effects:{" "}</span>
-                {justEffects.map(([name, cost]): JSX.Element => <>
+                {!getUncovered() ? "???" : justEffects.map(([name, cost]): JSX.Element => <>
                     <span class={checkPurchasable() ? "text-green-600" : "text-yellow-600"}>
                         ({numberFormat(game(), name, cost, false)} {titleFormat(game(), name)})
                     </span>
                 </>)}
             </Show>
         </button>
-    </Show>;
+    </>;
 }
