@@ -1,7 +1,7 @@
 import { gameConfig } from "./content";
 import {Accessor, For, Index, JSX, Show, createContext, createSignal, onCleanup, onMount, untrack, useContext} from "solid-js";
 import Split from "split.js";
-import { Game, GameCore, ManualButtonDetails, getCounterChange, numberFormat, parseDesc, titleFormat } from "./core";
+import { Game, GameConfigurationItem, GameCore, ManualButtonDetails, getCounterChange, numberFormat, parseDesc, titleFormat } from "./core";
 import { spawnParticle } from "./clicker";
 
 // game.performBuy(button)
@@ -21,33 +21,91 @@ export function App(core: GameCore): JSX.Element {
 function AppMain(core: GameCore): JSX.Element {
     const ticked = useContext(sjs_context)!;
 
-    let split_0!: HTMLDivElement;
-    let split_1!: HTMLDivElement;
-    onMount(() => {
-        Split([split_0, split_1], {
-            sizes: [30, 70],
+    type Section = {
+        left: GameConfigurationItem[],
+        right: GameConfigurationItem[],
+        single?: boolean,
+    };
+    const sections: Section[] = [];
+    let uncommitted_section: Section = {left: [], right: []};
+    let commitSection = () => {
+        if(uncommitted_section.left.length > 0 || uncommitted_section.right.length > 0) {
+            sections.push(uncommitted_section);
+            uncommitted_section = {left: [], right: []};
+        }
+    };
+    for(const segment of gameConfig) {
+        if(segment[0] === "separator") {
+            commitSection();
+            sections.push({
+                left: [segment],
+                right: [],
+                single: true,
+            });
+        }else if(segment[0] === "spacer") {
+            commitSection();
+            sections.push({
+                left: [segment],
+                right: [],
+                single: true,
+            });
+        }else if(segment[0] === "counter") {
+            uncommitted_section.left.push(segment);
+        }else if(segment[0] === "button") {
+            uncommitted_section.right.push(segment);
+        }
+    }
+    commitSection();
+
+    if(false) {
+        let split_0!: HTMLDivElement;
+        let split_1!: HTMLDivElement;
+        onMount(() => {
+            Split([split_0, split_1], {
+                sizes: [30, 70],
+            });
         });
-    });
-    return <div class="h-screen flex flex-row">
-        <div class="h-full overflow-y-scroll p-2 pb-[50%]" ref={split_0}>
-            <For each={gameConfig}>{entry => entry[0] === "counter" ? <>
-                {untrack(() => Counter(core, entry[1], entry[2]))}
-            </> : entry[0] === "separator" ? <>
-                <hr class="my-2" />
-            </> : entry[0] === "spacer" ? <>
-                <div class="pb-2" />
-            </> : null}</For>
-        </div>
-        <div class="h-full overflow-y-scroll p-2 pb-[50%]" ref={split_1}>
-            <For each={gameConfig}>{entry => entry[0] === "button" ? <>
-                {untrack(() => BuyButton(core, entry[1]))}
-            </> : entry[0] === "separator" ? <>
-                <hr class="my-2" />
-            </> : entry[0] === "spacer" ? <>
-                <div class="pb-2" />
-            </> : null}</For>
-        </div>
-    </div>;
+        return <div class="h-screen flex flex-row">
+            <div class="h-full overflow-y-scroll p-2 pb-[50%]" ref={split_0}>
+                {sections.map(segment => (
+                    segment.left.map(item => untrack(() => Segment(core, item)))
+                ))}
+            </div>
+            <div class="h-full overflow-y-scroll p-2 pb-[50%]" ref={split_1}>
+                {sections.map(segment => (
+                    segment.right.map(item => untrack(() => Segment(core, item)))
+                ))}
+            </div>
+        </div>;
+    }else{
+        return <div class="py-2">
+            {sections.map(segment => <div class={
+                "grid " + (segment.single ? "grid-cols-[1fr]" : "grid-cols-[30fr_max-content_70fr]")
+            }>
+                <div class="text-right">
+                    {segment.left.map(item => untrack(() => Segment(core, item)))}
+                </div>
+                <Show when={!segment.single}>
+                    <div class="border-l border-zinc-400 h-full" />
+                    <div>
+                        {segment.right.map(item => untrack(() => Segment(core, item)))}
+                    </div>
+                </Show>
+            </div>)}
+        </div>;
+    }
+}
+
+function Segment(core: GameCore, segment: GameConfigurationItem): JSX.Element {
+    if(segment[0] === "counter") {
+        return Counter(core, segment[1], segment[2]);
+    }else if(segment[0] === "button") {
+        return BuyButton(core, segment[1]);
+    }else if(segment[0] === "separator") {
+        return <div class="px-2"><hr class="my-2 border-zinc-400" /></div>;
+    }else if(segment[0] === "spacer") {
+        return <div class="pb-4" />;
+    }
 }
 
 function Counter(core: GameCore, currency: string, counter_desc: string): JSX.Element {
@@ -64,16 +122,20 @@ function Counter(core: GameCore, currency: string, counter_desc: string): JSX.El
         return {avg: average_change, reasons: change_reasons};
     };
 
+    const [is_open, setOpen] = createSignal(false);
+
+    // consider counter descriptions on hover rather than click
+
     return <Show when={is_revealed()} fallback={<>
-        <div>???</div>
+        <div class="px-2">locked counter</div>
     </>}>
-        <details class="block">
-            <summary>
+        <details class="block" open={is_open()} onToggle={v => setOpen(v.currentTarget.open)}>
+            <summary class={"hover:bg-gray-200 user-select-none px-2 user-select-none "+(is_open() ? "bg-gray-100" : "")}>
                 {titleFormat(game(), currency)}{": "}
                 {numberFormat(game(), currency, count(), false)}
                 {average_change().avg ? " ("+numberFormat(game(), currency, average_change().avg)+")" : ""}
             </summary>
-            <div class="pl-4">
+            <div class="px-2 text-left bg-gray-50">
                 <div>{parseDesc(game(), counter_desc)}</div>
                 <ul class="list-disc pl-4">
                     <Index each={average_change().reasons} fallback={<>
@@ -100,9 +162,9 @@ function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
     const justEffects = Object.entries(entry.effects || {});
 
     return <Show when={getUncovered()} fallback={<>
-        <div>???</div>
+        <div class="px-2">locked</div>
     </>}>
-        <button class={"block disabled:opacity-50 " + (checkPurchasable() ? "hover:bg-gray-200 focus:bg-gray-200 active:bg-gray-300" : "")} disabled={!checkPurchasable()} onClick={(e) => {
+        <button class={"px-2 block w-full text-left disabled:opacity-50 " + (checkPurchasable() ? "hover:bg-gray-200 focus:bg-gray-200 active:bg-gray-300" : "")} disabled={!checkPurchasable()} onClick={(e) => {
             if(core.purchase(entry)) {
                 if(e.clientX) spawnParticle(e.clientX, e.clientY, "+");
                 else {
