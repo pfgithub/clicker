@@ -143,7 +143,7 @@ function Counter(core: GameCore, currency: string, counter_desc: string): JSX.El
                 <Show when={is_revealed()} fallback={"???"}>
                     {titleFormat(game(), currency)}{": "}
                     {numberFormat(game(), currency, count(), false)}
-                    {average_change().avg ? " ("+numberFormat(game(), currency, average_change().avg)+")" : ""}
+                    {average_change().reasons.length ? " ("+numberFormat(game(), currency, average_change().avg)+")" : ""}
                 </Show>
             </summary>
             <div class={(pointer_coarse() ? "py-2 " : "") + "px-2 text-left bg-gray-50"}>
