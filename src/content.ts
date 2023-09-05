@@ -112,14 +112,15 @@ const gameContent: GameContent = {
             effects: { market: 1 },
         }),
         ["spacer"],
-        counter("apple", "an apple"),
+        counter("seed", "an apple seed. uses 1 water each tick to grow"),
         counter("water", "water grows trees"),
         [
             "counter",
             "tree",
             "each full tree requires {water|2} water each tick to live and drops {apple|1} apple per {apple|10} ticks.",
         ], // use template string? tag`each full tree requires ${["water", 2]} water each tick to live`
-        counter("seed", "an apple seed. uses 1 water each tick to grow"),
+        counter("bucket", "a bucket"),
+        counter("apple", "an apple"),
         button("purchase seed from market", {
             price: { gold: 50_00 },
             requires: { market: 5 },
@@ -130,7 +131,6 @@ const gameContent: GameContent = {
             requires: { market: 5 },
             effects: { water: 1_00 },
         }),
-        counter("bucket", "a bucket"),
         button("make bucket", {
             price: { tree: 1_00, gold: 100_00 },
             effects: { bucket: 1 },
