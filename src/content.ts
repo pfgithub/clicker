@@ -102,7 +102,7 @@ const gameContent: GameContent = {
         ["separator"],
         counter("stamina", "stamina increases {stamina|1} per tick, max {stamina|100}"), // revealcondition: stamina < 10% (don't show stamina until you run out)
         button("work", {
-            effects: {tick_add: 1},
+            effects: {tick_add: 1}, // CONSIDER: effects: (game => {tick_add: game.bal.achievement}), uncover_with: "achievement"
             uncover_with: "stamina",
         }),
         ["spacer"],
@@ -250,7 +250,7 @@ const gameContent: GameContent = {
         }),
         // each spore catalyst must produce 11-100 spore seeds or something
         button("apply catalyst", {
-            price: {spore_catalyst: 1, mosh_spore_0: 1_00, stamina: 10},
+            price: {mosh_spore_0: 10_000_00, spore_catalyst: 1, stamina: 10},
             effects: {mosh_spore: 1},
         }),
         // you can buy a heater in the future to auto convert catalyst + spore0 to spores
@@ -269,11 +269,14 @@ const gameContent: GameContent = {
         // ok let's gate everything past here on having at least 1,000 goop b/c as long as you
         // have at least 1k goop you can repeat the above process and increase how much goop you have
         ["spacer"],
-        counter("bunsen_burner", "catalyzes {mosh_spore} automatically. +{mosh_spore|1} each tick, costing {spore_catalyst|1} {spore_catalyst}, {mosh_spore_0|100} {mosh_spore_0}"),
-        counter("water_wheel", "produces {stamina|1} up to {stamina|200} automatically every 10 ticks"),
+        counter("bunsen_burner", "catalyzes {mosh_spore} automatically. +{mosh_spore|1} each tick, costing {mosh_spore_0|10_000_00} {mosh_spore_0}, {spore_catalyst|1} {spore_catalyst}"),
+        counter("water_wheel", "produces {stamina|1} {stamina} up to {stamina|200} automatically every 10 ticks"),
         button("purchase bunsen burner", {
             price: {mosh_shop_access: 1, gold: 10_000_00},
             effects: {bunsen_burner: 1},
+        }),
+        button("sell bunsen burner", {
+            price: {bunsen_burner: 1},
         }),
         button("purchase water wheel", {
             price: {mosh_shop_access: 1, apple: 100_000},
@@ -403,7 +406,7 @@ function mainLogic(game: Game) {
         if(bal.bunsen_burner > 0) {
             const buycount = Math.min(
                 Math.floor(bal.spore_catalyst / 1),
-                Math.floor(bal.mosh_spore_0 / 100),
+                Math.floor(bal.mosh_spore_0 / 10_000_00),
                 Math.floor(bal.bunsen_burner / 1),
             );
             up1t("spore_catalyst", -buycount, "bunsen burner");
