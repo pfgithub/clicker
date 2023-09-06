@@ -1,6 +1,6 @@
 import { gameConfig } from "./content";
 import * as μhtml from "uhtml";
-import { ButtonDetails, Game, GameConfigurationItem, GameCore, ObjectMap, getCounterChange, numberFormat, parseDesc, titleFormat } from "./core";
+import { ButtonDetails, Game, GameConfigurationItem, GameCore, ObjectMap, getCounterChange, numberFormat, parseDesc, priceget, titleFormat } from "./core";
 
 const {html} = μhtml;
 
@@ -202,8 +202,8 @@ function BuyButton(core: GameCore, details: ButtonDetails) {
     return html`
         <div>requires: ${requires.map(([name, cost]) => {
         return html`
-            <span class=${game.money[name] >= cost ? "buyable" : "tooexpensive"}>
-                (${numberFormat(game, name, cost, false)} ${titleFormat(game, name)})
+            <span class=${game.money[name] >= priceget(game, cost) ? "buyable" : "tooexpensive"}>
+                (${numberFormat(game, name, priceget(game, cost), false)} ${titleFormat(game, name)})
             </span>`;
         })}</div>
     `};
@@ -212,8 +212,8 @@ function BuyButton(core: GameCore, details: ButtonDetails) {
     return html`
         <div>price: ${justPrice.map(([name, cost]) => {
         return html`
-            <span class=${game.money[name] >= cost ? "buyable" : "tooexpensive"}>
-                (${numberFormat(game, name, cost, false)} ${titleFormat(game, name)})
+            <span class=${game.money[name] >= priceget(game, cost) ? "buyable" : "tooexpensive"}>
+                (${numberFormat(game, name, priceget(game, cost), false)} ${titleFormat(game, name)})
             </span>`;
         })}</div>
     `};
@@ -223,7 +223,7 @@ function BuyButton(core: GameCore, details: ButtonDetails) {
         <div>effects: ${isUncovered ? justEffects.map(([name, cost]) => {
         return html`
             <span>
-                (${numberFormat(game, name, cost)} ${titleFormat(game, name)})
+                (${numberFormat(game, name, priceget(game, cost))} ${titleFormat(game, name)})
             </span>`;
         }) : "???"}</div>
     `};

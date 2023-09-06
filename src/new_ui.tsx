@@ -1,7 +1,7 @@
 import { gameConfig } from "./content";
 import {Accessor, For, Index, JSX, Show, createContext, createSignal, onCleanup, onMount, untrack, useContext} from "solid-js";
 import Split from "split.js";
-import { Game, GameConfigurationItem, GameCore, ManualButtonDetails, getCounterChange, numberFormat, parseDesc, titleFormat } from "./core";
+import { Game, GameConfigurationItem, GameCore, ManualButtonDetails, getCounterChange, numberFormat, parseDesc, priceget, titleFormat } from "./core";
 import { spawnParticle } from "./clicker";
 import { signalFromMatchMedia } from "./util";
 
@@ -190,16 +190,16 @@ function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
             <Show when={requires.length > 0}>
                 {pointer_coarse() ? <div /> : " / "}<span class="">requires:{" "}</span>
                 {requires.map(([name, cost]): JSX.Element => <>
-                    <span class={game().money[name] >= cost ? "text-green-600" : "text-red-600"}>
-                        ({numberFormat(game(), name, cost, false)} {titleFormat(game(), name)})
+                    <span class={game().money[name] >= priceget(game(), cost) ? "text-green-600" : "text-red-600"}>
+                        ({numberFormat(game(), name, priceget(game(), cost), false)} {titleFormat(game(), name)})
                     </span>
                 </>)}
             </Show>
             <Show when={justPrice.length > 0}>
                 {pointer_coarse() ? <div /> : " / "}<span class="">price:{" "}</span>
                 {justPrice.map(([name, cost]): JSX.Element => <>
-                    <span class={game().money[name] >= cost ? "text-green-600" : "text-red-600"}>
-                        ({numberFormat(game(), name, cost, false)} {titleFormat(game(), name)})
+                    <span class={game().money[name] >= priceget(game(), cost) ? "text-green-600" : "text-red-600"}>
+                        ({numberFormat(game(), name, priceget(game(), cost), false)} {titleFormat(game(), name)})
                     </span>
                 </>)}
             </Show>
@@ -207,7 +207,7 @@ function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
                 {pointer_coarse() ? <div /> : " / "}<span class="">effects:{" "}</span>
                 {!getUncovered() ? "???" : justEffects.map(([name, cost]): JSX.Element => <>
                     <span class={checkPurchasable() ? "text-green-600" : "text-yellow-600"}>
-                        ({numberFormat(game(), name, cost, false)} {titleFormat(game(), name)})
+                        ({numberFormat(game(), name, priceget(game(), cost), false)} {titleFormat(game(), name)})
                     </span>
                 </>)}
             </Show>

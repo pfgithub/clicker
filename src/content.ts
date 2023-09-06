@@ -79,7 +79,7 @@ const gameContent: GameContent = {
         _ach_4: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
     },
     gameConfig: [
-        counter("achievement", "number of achievements you have recieved"),
+        counter("achievement", "number of achievements you have recieved. each achievement makes work stronger."),
         button("collect 100 gold", {
             requires: { gold: 100_00 },
             price: { _ach_1: 1 }, // _ach_1: [1, {unavailable: "hide"}]
@@ -100,10 +100,10 @@ const gameContent: GameContent = {
             effects: { achievement: 1 },
         }),
         ["separator"],
-        counter("stamina", "stamina increases {stamina|1} per tick, max {stamina|100}"), // revealcondition: stamina < 10% (don't show stamina until you run out)
+        counter("stamina", "stamina increases {stamina|1} per {tick}, max {stamina|100}"), // revealcondition: stamina < 10% (don't show stamina until you run out)
         button("work", {
-            effects: {tick_add: 1}, // CONSIDER: effects: (game => {tick_add: game.bal.achievement}), uncover_with: "achievement"
-            uncover_with: "stamina",
+            requires: {achievement: 1},
+            effects: {tick_add: game => (game.money.achievement ?? 0)}, // CONSIDER: effects: (game => {tick_add: game.bal.achievement}), uncover_with: "achievement"
         }),
         ["spacer"],
         // later I could have a "relax" thing that increases your max stamina

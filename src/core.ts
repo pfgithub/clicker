@@ -20,7 +20,7 @@ export type Game = {
     counterConfig: CounterConfig;
     cheatMode?: boolean;
 };
-export type Price = ObjectMap<number>;
+export type Price = ObjectMap<number | ((game: Game) => number)>;
 export type ManualButtonDetails = {
     price?: Price;
     effects?: Price;
@@ -189,7 +189,7 @@ export function newCore(): GameCore {
             const justPrice = Object.entries(details.price || {});
             const price = [...justPrice, ...requires];
 
-            return price.every(([k, v]) => game.money[k] >= v)
+            return price.every(([k, v]) => game.money[k] >= priceget(game, v))
         },
         checkUncovered(details) {
             if(details.uncover_with != null) {
@@ -219,7 +219,7 @@ export function newCore(): GameCore {
 
             before_next_tick.push(() => {
                 for (let [key, value] of effects) {
-                    addMoney(game, key, value, 1, "purchase");
+                    addMoney(game, key, priceget(game, value), 1, "purchase");
                 }
             });
 
@@ -228,6 +228,10 @@ export function newCore(): GameCore {
         },
     };
     return core;
+}
+
+export function priceget(game: Game, price: number | ((game: Game) => number)) {
+    return typeof price === "number" ? price : price(game);
 }
 
 let descCache: {[key: string]: string} = {};
