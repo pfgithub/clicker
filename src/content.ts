@@ -69,6 +69,9 @@ const gameContent: GameContent = {
 
         mosh_shop_access: {displayMode: "integer", title: "shop access pass", displaySuffix: "×"},
         bunsen_burner: {displayMode: "integer", title: "bunsen burner"},
+        water_wheel: {displayMode: "integer", title: "water wheel"},
+
+        air_pollution: {displayMode: "hidden"},
 
         _ach_1: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
         _ach_2: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
@@ -227,8 +230,8 @@ const gameContent: GameContent = {
         }),
         // I should do some stuff using stamina to convert goop into materials or something
         ["spacer"],
-        counter("mish", "mished goop"),
         counter("mash", "mashed mosh"),
+        counter("mish", "mished goop"),
         button("mash mosh", {
             requires: {mosh_spore_0: 10_000_00},
             price: {mosh: 100_00, stamina: 100},
@@ -267,15 +270,15 @@ const gameContent: GameContent = {
         // have at least 1k goop you can repeat the above process and increase how much goop you have
         ["spacer"],
         counter("bunsen_burner", "catalyzes {mosh_spore} automatically. +{mosh_spore|1} each tick, costing {spore_catalyst|1} {spore_catalyst}, {mosh_spore_0|100} {mosh_spore_0}"),
+        counter("water_wheel", "produces {stamina|1} up to {stamina|200} automatically every 10 ticks"),
         button("purchase bunsen burner", {
             price: {mosh_shop_access: 1, gold: 10_000_00},
             effects: {bunsen_burner: 1},
         }),
-        // oh actually
-        // let's make a mosh shop access pass
-        // you purchase it for 2,000 goop and 100,000 gold and you can sell it at any time for 2,000 goop
-
-        // ok now that you're in the shop you should probably been given new methods of gold accumulation
+        button("purchase water wheel", {
+            price: {mosh_shop_access: 1, apple: 100_000},
+            effects: {water_wheel: 1},
+        }),
     ],
     gameLogic: (game: Game) => {
         return mainLogic(game);
@@ -304,7 +307,7 @@ function mainLogic(game: Game) {
     for(let i = 0; i < repeat_count; i++) {
         up1t("tick", 1, "advance");
 
-        if(bal.stamina === bal._prev_stamina && bal.stamina < 100) {
+        if(bal.stamina >= bal._prev_stamina && bal.stamina < 100) {
             up1t("stamina", 1, "rest");
         }
         set1t("_prev_stamina", bal.stamina);
@@ -406,6 +409,14 @@ function mainLogic(game: Game) {
             up1t("spore_catalyst", -buycount, "bunsen burner");
             up1t("mosh_spore_0", -buycount * 100, "bunsen burner");
             up1t("mosh_spore", buycount, "bunsen burner");
+            up1t("air_pollution", 1, "bunsen burner");
+        }
+        if(bal.water_wheel > 0 && bal.tick % 10 === 0 && bal.stamina < 200) {
+            const buycount = Math.min(
+                Math.floor(bal.water_wheel / 1),
+                200 - bal.stamina,
+            );
+            up10t("stamina", buycount, "water wheel");
         }
     }
 }
