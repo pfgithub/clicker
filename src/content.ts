@@ -77,6 +77,10 @@ const gameContent: GameContent = {
         _ach_2: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
         _ach_3: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
         _ach_4: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
+        _ach_5: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
+        _ach_6: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
+        _ach_7: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
+        _ach_8: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
     },
     gameConfig: [
         counter("achievement", "number of achievements you have recieved. each achievement makes work stronger."),
@@ -85,8 +89,16 @@ const gameContent: GameContent = {
             price: { _ach_1: 1 }, // _ach_1: [1, {unavailable: "hide"}]
             effects: { achievement: 1 },
         }),
+        button("midas", {
+            price: { gold: 1_000_000_000_00, _ach_6: 1 },
+            effects: { achievement: 1 },
+        }),
+        button("an apple a day", {
+            requires: { apple: 365, _ach_2: 1 },
+            effects: { achievement: 1 },
+        }),
         button("eat apples", {
-            price: { apple: 1_00, _ach_2: 1 },
+            price: { apple: 1_000_000_000_000, _ach_5: 1 },
             effects: { achievement: 1 },
         }),
         button("this game", {
@@ -94,10 +106,19 @@ const gameContent: GameContent = {
             price: { _ach_3: 1 },
             effects: { achievement: 1 },
         }),
+        button("intergalactic empire", {
+            requires: { credit: 1_000_000_000 },
+            price: { _ach_7: 1 },
+            effects: { achievement: 1 },
+        }),
         button("goop maker", {
-            requires: { goop: 2000_00 }, // requires you to produce your own mosh spores past the original 10
+            requires: { goop: 2_000_00 }, // requires you to produce your own mosh spores past the original 10
             price: { _ach_4: 1 },
             effects: { achievement: 1 },
+        }),
+        button("goop eater", {
+            price: { goop: 1_000_000_000_00, _ach_8: 1 },
+            effects: { achievement: 1, goop: 1_000_00 },
         }),
         ["separator"],
         counter("stamina", "stamina increases {stamina|1} per {tick}, max {stamina|100}"), // revealcondition: stamina < 10% (don't show stamina until you run out)
