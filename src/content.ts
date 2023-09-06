@@ -9,6 +9,7 @@ function button(
         price?: Price;
         effects?: Price;
         requires?: Price;
+        uncover_with?: string,
     },
 ): GameConfigurationItem {
     return ["button", { name, ...details }];
@@ -23,7 +24,7 @@ const gameContent: GameContent = {
     counterConfig: {
         tick: { displayMode: "hidden" },
         tick_add: { displayMode: "integer", title: "tick" },
-        stamina: { initialValue: 100, displayMode: "percentage" }, // 100%, 50%
+        stamina: { initialValue: 100, displayMode: "percentage", unlockHidden: true }, // 100%, 50%
         tree: { displayMode: "numberpercentage" }, // 1
         seed: { displayMode: "numberpercentage" }, // 2 and 10%
         gold: { displayMode: "decimal", displaySuffix: "ᵹ" }, // 1.00, 2.50
@@ -98,6 +99,7 @@ const gameContent: GameContent = {
         counter("stamina", "stamina increases {stamina|1} per tick, max {stamina|100}"), // revealcondition: stamina < 10% (don't show stamina until you run out)
         button("work", {
             effects: {tick_add: 1},
+            uncover_with: "stamina",
         }),
         ["spacer"],
         // later I could have a "relax" thing that increases your max stamina
@@ -293,6 +295,10 @@ function mainLogic(game: Game) {
 
     const repeat_count = bal.tick_add + 1;
     if(bal.tick_add > 0) up1t("tick_add", -bal.tick_add, "use");
+
+    if(bal.stamina < 80) { // first purchase that costs lots of stamina costs 80
+        game.uncoveredCounters.stamina = true;
+    }
 
     for(let i = 0; i < repeat_count; i++) {
         up1t("tick", 1, "advance");

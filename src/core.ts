@@ -26,6 +26,7 @@ export type ManualButtonDetails = {
     effects?: Price;
     requires?: Price;
     name: string;
+    uncover_with?: string;
 };
 export type ButtonDetails = ManualButtonDetails & {
     // id: string & { __unique: true };
@@ -58,7 +59,7 @@ export function newCore(): GameCore {
         money: {},
         counterConfig: {},
         moneyTransfer: {},
-        uncoveredCounters: { stamina: true },
+        uncoveredCounters: {},
     };
 
     let savedGame = localStorage.getItem("save");
@@ -181,6 +182,8 @@ export function newCore(): GameCore {
         },
 
         checkPurchasable(details) {
+            if(details.uncover_with != null) if(!core.checkUncovered(details)) return false;
+
             const requires = Object.entries(details.requires || {});
             const justPrice = Object.entries(details.price || {});
             const price = [...justPrice, ...requires];
@@ -188,6 +191,10 @@ export function newCore(): GameCore {
             return price.every(([k, v]) => game.money[k] >= v)
         },
         checkUncovered(details) {
+            if(details.uncover_with != null) {
+                return !!game.uncoveredCounters[details.uncover_with];
+            }
+
             const requires = Object.entries(details.requires || {});
             const justPrice = Object.entries(details.price || {});
             const price = [...justPrice, ...requires];
@@ -253,6 +260,7 @@ export type CounterConfigurationItem = {
     displaySuffix?: string;
     displayPrefix?: string;
     initialValue?: number;
+    autoReveal?: boolean;
     unlockHidden?: boolean;
     title?: string;
 };
