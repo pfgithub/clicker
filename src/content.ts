@@ -24,6 +24,7 @@ const gameContent: GameContent = {
     counterConfig: {
         tick: { displayMode: "hidden" },
         tick_add: { displayMode: "integer", title: "tick" },
+        _prev_stamina: {displayMode: "hidden"},
         stamina: { initialValue: 100, displayMode: "percentage", unlockHidden: true }, // 100%, 50%
         tree: { displayMode: "numberpercentage" }, // 1
         seed: { displayMode: "numberpercentage" }, // 2 and 10%
@@ -105,7 +106,7 @@ const gameContent: GameContent = {
         // later I could have a "relax" thing that increases your max stamina
         counter("gold", "gold lets you purchase things"),
         button("fish gold from wishing well", {
-            price: { stamina: 2 },
+            price: { stamina: 1 },
             effects: { gold: 100 },
         }),
         counter("market", "each market generates {gold|1} gold per tick"),
@@ -303,9 +304,12 @@ function mainLogic(game: Game) {
     for(let i = 0; i < repeat_count; i++) {
         up1t("tick", 1, "advance");
 
+        if(bal.stamina === bal._prev_stamina && bal.stamina < 100) {
+            up1t("stamina", 1, "rest");
+        }
+        set1t("_prev_stamina", bal.stamina);
+
         up1t("gold", bal.market, "markets");
-        if (bal.stamina < 100) up1t("stamina", 1, "rest");
-        if (bal.stamina > 100) set1t("stamina", 100);
         
         if(bal.sprinkler > 0 && bal.tick % 10 === 0) {
             const buycount =  Math.min(Math.floor(bal.credit / 1), bal.sprinkler);

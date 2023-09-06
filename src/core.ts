@@ -110,12 +110,13 @@ export function newCore(): GameCore {
     let purchased_this_tick = false;
     let before_next_tick: CB[] = [];
     tickHandlers.push(() => {
+        game.tick++;
+
         for(const item of before_next_tick) {
             item();
         }
         before_next_tick = [];
 
-        game.tick++;
         purchased_this_tick = false;
 
         if (game.tick % 50 === 0) {
@@ -269,8 +270,6 @@ export type TransferInfo = {
     [reason: string]: {diff: number, frequency: number, lastSet: number},
      // this should probably be an array of transfers that occured last frame
      // and then cleared automatically
-     // not sure why it's like this - currently you can't write the same transfer name twice
-     // the main tick fn could clear it of anything expired
 };
 export function titleFormat(game: Game, currency: string): string {
     if(!game.uncoveredCounters[currency]) return "???";
@@ -387,7 +386,7 @@ export function getCounterChange(game: Game, currency: string): {
     average_change: number,
     change_reasons: [string, {diff: number, frequency: number, lastSet: number}][],
 } {
-    const reasons = Object.entries(game.moneyTransfer[currency] ?? {}).filter(([k, v]) => game.tick <= v.lastSet + v.frequency && v.diff !== 0);
+    const reasons = Object.entries(game.moneyTransfer[currency] ?? {}).filter(([k, v]) => game.tick < v.lastSet + v.frequency && v.diff !== 0);
 
     const average = reasons.reduce((t, [k, v]) => t + v.diff / v.frequency, 0);
 
