@@ -324,8 +324,10 @@ function mainLogic(game: Game) {
         if(deadTrees > 0) up1t("tree", -2 * deadTrees, "dehydration");
         if (bal.water < 2 && deadTrees <= 0 && bal.tree > 0) {
             up1t("tree", -1, "dehydration");
-        }else if(bal.seed === 0 && tsplit.decimal > 0) {
-            up1t("tree", -1, "incomplete tree");
+        }
+        if(bal.water > 0 && bal.seed === 0 && tsplit.decimal > 0) {
+            up1t("tree", 1, "incomplete tree");
+            up1t("water", -1, "regrowth");
         }
         up1t("water",
             -(availableWater < requiredWater ? availableWater : requiredWater) *
