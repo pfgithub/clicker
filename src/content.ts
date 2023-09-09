@@ -386,7 +386,7 @@ function mainLogic(game: Game) {
         
         if(bal.sprinkler > 0 && bal.tick % 10 === 0) {
             const buycount =  Math.min(Math.floor(bal.credit / 1), bal.sprinkler);
-            up10t("water", 20_000 * buycount, "sprinkler");
+            up10t("water", 200_00 * buycount, "sprinkler");
             up10t("credit", -1 * buycount, "sprinkler");
         }
 

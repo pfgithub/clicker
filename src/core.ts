@@ -14,6 +14,7 @@ export type CB = () => void;
 
 export type Game = {
     tick: number;
+    prev_bal_tick?: number;
     money: ObjectMap<number>;
     moneyTransfer: ObjectMap<TransferInfo>;
     uncoveredCounters: ObjectMap<boolean>;
@@ -112,6 +113,7 @@ export function newCore(): GameCore {
     let before_next_tick: CB[] = [];
     tickHandlers.push(() => {
         game.tick++;
+        game.prev_bal_tick = game.money.tick;
 
         for(const item of before_next_tick) {
             item();
@@ -406,12 +408,17 @@ export function getCounterChange(game: Game, currency: string): {
     average_change: number,
     change_reasons: [string, {diff: number, frequency: number, lastSet: number}][],
 } {
-    const reasons = Object.entries(game.moneyTransfer[currency] ?? {}).filter(([k, v]) => game.tick < v.lastSet + v.frequency && v.diff !== 0);
+    const reasons = Object.entries(game.moneyTransfer[currency] ?? {}).filter(([k, v]) => game.money.tick < v.lastSet + v.frequency && v.diff !== 0);
 
     const average = reasons.reduce((t, [k, v]) => t + v.diff / v.frequency, 0);
 
+    const multiply = game.money.tick - (game.prev_bal_tick ?? (game.money.tick - 1));
+    if(multiply > 1 && reasons.length > 0) {
+        reasons.push(["×" + multiply, {diff: average * multiply - average, frequency: 1, lastSet: game.money.tick}]);
+    }
+
     return {
-        average_change: average,
+        average_change: average * multiply,
         change_reasons: reasons,
     };
 }
@@ -419,10 +426,10 @@ export function getCounterChange(game: Game, currency: string): {
 export function addMoney(game: Game, name: string, count: number, period: number, reason: string): void {
     game.money[name] += count;
     const moneytransfer = (game.moneyTransfer[name] ??= {});
-    if(moneytransfer[reason]?.lastSet === game.tick && moneytransfer[reason]?.frequency === period) {
+    if(moneytransfer[reason]?.lastSet === game.money.tick && moneytransfer[reason]?.frequency === period) {
         moneytransfer[reason].diff += count;
     }else{
-        moneytransfer[reason] = {diff: count, frequency: period, lastSet: game.tick};
+        moneytransfer[reason] = {diff: count, frequency: period, lastSet: game.money.tick};
     }
 }
 export function setMoney(game: Game, name: string, count: number): void {
