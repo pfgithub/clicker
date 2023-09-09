@@ -10,9 +10,16 @@ function button(
         effects?: Price;
         requires?: Price;
         uncover_with?: string,
+        action?: "destructive",
     },
 ): GameConfigurationItem {
     return ["button", { name, ...details }];
+}
+
+function exponential(initial_value: number, multiply: number, balance: number): number {
+    const res = initial_value * multiply ** balance;
+    if(multiply > 1) return Math.ceil(res)
+    return Math.floor(res);
 }
 
 /*
@@ -73,6 +80,18 @@ const gameContent: GameContent = {
 
         air_pollution: {displayMode: "hidden"},
 
+        // potential future things to make:
+        // - beats
+        // - seasons (fall, summer, winter, spring)
+        // - weather (rain, clouds, ...)
+        // - units (12μ)
+        // - count for every pixel scrolled on the page
+        // - count number of clicks
+        // - ice : earlygame cheaper than water but it takes a really long time to melt (realllyyyy long like hours long)
+
+        spice: {displayMode: "traditional", title: "spice", displaySuffix: "味"},
+        spice_bush: {displayMode: "traditional", title: "spice bush"},
+
         _ach_1: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
         _ach_2: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
         _ach_3: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
@@ -94,7 +113,8 @@ const gameContent: GameContent = {
             effects: { achievement: 1 },
         }),
         button("an apple a day", {
-            requires: { apple: 365, _ach_2: 1 },
+            requires: { apple: 365 },
+            price: { _ach_2: 1 },
             effects: { achievement: 1 },
         }),
         button("eat apples", {
@@ -185,6 +205,7 @@ const gameContent: GameContent = {
         }),
         button("fire merchant", {
             price: {merchant: 1, gold: 10_000},
+            action: "destructive",
         }),
         counter("sprinkler", "each sprinkler automatically buys {water|20_000} water for {credit|1} credit every 10 ticks."),
         button("buy sprinkler", {
@@ -194,6 +215,7 @@ const gameContent: GameContent = {
         button("sell sprinkler", {
             price: {sprinkler: 1},
             effects: {credit: 80},
+            action: "destructive",
         }),
         ["spacer"],
         button("buy seed bundle", {
@@ -298,11 +320,35 @@ const gameContent: GameContent = {
         }),
         button("sell bunsen burner", {
             price: {bunsen_burner: 1},
+            action: "destructive",
         }),
         button("purchase water wheel", {
             price: {mosh_shop_access: 1, apple: 100_000},
             effects: {water_wheel: 1},
         }),
+        button("purchase farmer's market", {
+            price: {mosh_shop_access: 1, credit: 1_000_000},
+            effects: {merchant: 100_000},
+        }),
+
+        ["spacer"],
+        counter("spice", "amount of spice you have"),
+        counter("spice_bush", "number of spice bushes you have. each spice bush uses {water|20} {water} and {mosh_spore_0|1} {mosh_spore_0} each {tick} to stay alive. each bush increases the number of spices recieved when picking spices"),
+
+        // 1. picking from the spice bush
+        button("pick spices", {
+            requires: {spice_bush: 1},
+            price: {stamina: 2},
+            effects: {spice: game => game.money.spice_bush},
+        }),
+        button("transplant bush", {
+            price: {mosh_shop_access: 1, mosh_spore_0: game => exponential(2_000_00, 1.1, game.money.spice_bush), stamina: 120},
+            effects: {spice_bush: 1},
+        }),
+
+        // 2. growing farms
+        // 3. invading countries (little mini-loop, you have to produce war materials or something to invade countries)
+        // 4. synthesizing chemicals
     ],
     gameLogic: (game: Game) => {
         return mainLogic(game);
@@ -442,6 +488,18 @@ function mainLogic(game: Game) {
             );
             up10t("stamina", buycount, "water wheel");
         }
+
+        const live_bush_count = bal.spice_bush;
+        const required_water = live_bush_count;
+        const required_mosh_spore_0 = live_bush_count;
+        const available_water = Math.floor(bal.water / 20);
+        const available_mosh_spore_0 = bal.mosh_spore_0;
+        const dead_bushes = Math.min(
+            available_water - required_water, // 100 - 
+            available_mosh_spore_0 - required_mosh_spore_0,
+            0,
+        );
+        up1t("spice_bush", -halflife70(dead_bushes), "died");
     }
 }
 

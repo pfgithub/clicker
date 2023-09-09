@@ -27,6 +27,7 @@ export type ManualButtonDetails = {
     requires?: Price;
     name: string;
     uncover_with?: string;
+    action?: "destructive",
 };
 export type ButtonDetails = ManualButtonDetails & {
     // id: string & { __unique: true };
@@ -258,6 +259,8 @@ export type DisplayMode =
     | "hidden"
     | "integernocomma1k"
     | "inverse_boolean"
+    | "traditional"
+    | "scientific"
 ;//
 export type ObjectMap<T> = { [key: string]: T };
 export type CounterConfigurationItem = {
@@ -379,6 +382,19 @@ export function numberFormat(game: Game, currency: string, n: number, showSign: 
     // integer_e = 1.00e0 9.00e0 1.00e1 9.90e1 1.00e2 9.99e2...
     if (displayMode === "hidden") {
         return "Oops! You should never see this!";
+    }
+    if (displayMode === "traditional") {
+        const log_val = Math.floor(Math.log10(n) / 3);
+        const div_val = 10 ** (log_val * 3);
+        const res_val = n / div_val;
+        const numbers: string[] = ["", "k", "m", "b", "t", "q", "Q", "s", "S", "o", "n", "d", "ud", "dd", "td", "qd"];
+        return res_val.toFixed(2) + (numbers[log_val] ?? "e"+(div_val * 3));
+    }
+    if(displayMode === "scientific") {
+        return n.toExponential(2);
+    }
+    if(displayMode === "logarithmic") {
+        return Math.log10(n).toFixed(2);
     }
     if (displayMode === "error") {
         return "ERR«"+currency+"»";
