@@ -213,17 +213,17 @@ export function newCore(): GameCore {
             if(purchased_this_tick) return false;
             if (!game.cheatMode && !core.checkPurchasable(details)) return false;
 
-            const justPrice = Object.entries(details.price || {});
-            const justEffects = Object.entries(details.effects || {});
-            const effects = [
-                ...justEffects,
-                ...justPrice.map(([k, v]) => [k, -v] as const),
-            ];
-
             before_next_tick.push(() => {
+                const justPrice = Object.entries(details.price || {});
+                const justEffects = Object.entries(details.effects || {});
+                const effects = [
+                    ...justPrice.map(([k, v]) => [k, -priceget(game, v)] as const),
+                    ...justEffects.map(([k, v]) => [k, priceget(game, v)] as const),
+                ];
+
                 game.money.tick += 1; // hack; tick should be added before this is called but it isn't
                 for (let [key, value] of effects) {
-                    addMoney(game, key, priceget(game, value), 1, "purchase");
+                    addMoney(game, key, value, 1, "purchase");
                 }
                 game.money.tick -= 1;
             });

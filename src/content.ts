@@ -347,7 +347,7 @@ const gameContent: GameContent = {
 
         ["spacer"],
         counter("spice", "amount of spice you have"),
-        counter("spice_bush", "number of spice bushes you have. each spice bush uses {water|20} {water} and {mosh_spore_0|1} {mosh_spore_0} each {tick} to stay alive. each bush increases the number of spices recieved when picking spices"),
+        counter("spice_bush", "number of spice bushes you have. each spice bush uses {water|20_00} {water} and {mosh_spore_0|1} {mosh_spore_0} each {tick} to stay alive. each bush increases the number of spices recieved when picking spices"),
 
         // 1. picking from the spice bush
         button("pick spices", {
@@ -515,14 +515,17 @@ function mainLogic(game: Game) {
         const live_bush_count = bal.spice_bush;
         const required_water = live_bush_count;
         const required_mosh_spore_0 = live_bush_count;
-        const available_water = Math.floor(bal.water / 20);
+        const available_water = Math.floor(bal.water / 20_00);
         const available_mosh_spore_0 = bal.mosh_spore_0;
         const dead_bushes = Math.min(
             available_water - required_water, // 100 - 
             available_mosh_spore_0 - required_mosh_spore_0,
             0,
         );
+        const paid_bushes = live_bush_count - dead_bushes;
         up1t("spice_bush", -halflife70(dead_bushes), "died");
+        up1t("mosh_spore_0", -paid_bushes, "spice bushes");
+        up1t("water", -(paid_bushes * 20_00), "spice bushes");
     }
 }
 
