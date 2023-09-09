@@ -160,6 +160,7 @@ function Counter(core: GameCore, currency: string, counter_desc: string): JSX.El
     </>;
 }
 
+// TODO highlight all needed resources on mouseover
 function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
     const ticked = useContext(sjs_context)!;
     

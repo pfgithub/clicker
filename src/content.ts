@@ -76,6 +76,7 @@ const gameContent: GameContent = {
 
         mosh_shop_access: {displayMode: "integer", title: "shop access pass", displaySuffix: "×"},
         bunsen_burner: {displayMode: "integer", title: "bunsen burner"},
+        composter: {displayMode: "integer"},
         water_wheel: {displayMode: "integer", title: "water wheel"},
 
         air_pollution: {displayMode: "hidden"},
@@ -313,6 +314,7 @@ const gameContent: GameContent = {
         // have at least 1k goop you can repeat the above process and increase how much goop you have
         ["spacer"],
         counter("bunsen_burner", "catalyzes {mosh_spore} automatically. +{mosh_spore|1} each tick, costing {mosh_spore_0|1_000_00} {mosh_spore_0}, {spore_catalyst|1} {spore_catalyst}"),
+        counter("composter", "rots {apple} automatically. +{rot|1} {rot} each tick, requiring {swamp|300_00} {swamp} and costing {apple|100_000} {apple}"),
         counter("water_wheel", "produces {stamina|1} {stamina} up to {stamina|200} automatically every 10 ticks"),
         button("purchase bunsen burner", {
             price: {mosh_shop_access: 1, gold: 10_000_00},
@@ -320,6 +322,14 @@ const gameContent: GameContent = {
         }),
         button("sell bunsen burner", {
             price: {bunsen_burner: 1},
+            action: "destructive",
+        }),
+        button("purchase composter", {
+            price: {mosh_shop_access: 1, gold: 10_000_00},
+            effects: {composter: 1},
+        }),
+        button("sell composter", {
+            price: {composter: 1},
             action: "destructive",
         }),
         button("purchase water wheel", {
@@ -480,6 +490,15 @@ function mainLogic(game: Game) {
             up1t("mosh_spore_0", -buycount * 100, "bunsen burner");
             up1t("mosh_spore", buycount, "bunsen burner");
             up1t("air_pollution", 1, "bunsen burner");
+        }
+        if(bal.composter > 0 && bal.swamp > 300_00) {
+            const buycount = Math.min(
+                Math.floor(bal.apple / 100_000),
+                Math.floor(bal.composter / 1),
+            );
+            up1t("apple", -buycount, "composter");
+            up1t("rot", buycount, "composter");
+            up1t("air_pollution", 1, "composter");
         }
         if(bal.water_wheel > 0 && bal.tick % 10 === 0 && bal.stamina < 200) {
             const buycount = Math.min(
