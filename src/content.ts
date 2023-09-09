@@ -94,6 +94,8 @@ const gameContent: GameContent = {
         spice: {displayMode: "traditional", title: "spice", displaySuffix: "味"},
         spice_bush: {displayMode: "traditional", title: "spice bush"},
         spice_farm: {displayMode: "traditional", title: "spice farm"},
+        spice_mine: {displayMode: "traditional", title: "spice mine"},
+        spice_miner: {displayMode: "traditional", title: "spice miner"},
 
         _ach_1: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
         _ach_2: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
@@ -366,12 +368,23 @@ const gameContent: GameContent = {
 
         counter("spice_farm", "number of spice farms you have. each spice farm uses {water|40_00} {water} each tick to stay alive. each farm produces {spice|1} {spice} per tick."),
         button("lay farm", {
-            price: {mosh_shop_access: 1, spice: game => exponential(500, 1.1, game.money.spice_farm)},
+            price: {mosh_shop_access: 1, spice: game => exponential(5000, 1.1, game.money.spice_farm)},
             effects: {spice_farm: 1},
         }),
-        // 3. spice mine
-        // 4. invading countries (little mini-loop, you have to produce war materials or something to invade countries)
-        // 5. synthesizing chemicals
+        // 3. spice mine (consider random cave-ins?)
+        counter("spice_mine", "number of spice mines you have. each spice mine produces {spice|1} {spice} per {spice_miner}"),
+        button("open mine", {
+            price: {gold: 2_000_000_00, mosh_spore_0: 100_000_00},
+            effects: {spice_mine: 1},
+        }),
+        counter("spice_miner", "number of spice miners you have. each miner is paid {gold|100_00} {gold} per tick to stay employed"),
+        button("hire miner", {
+            price: {spice: game => exponential(1_000_000, 1.1, game.money.spice_miner)},
+            effects: {spice_miner: 1},
+        }),
+        // 4. spice potening factory
+        // 5. invading countries (little mini-loop, you have to produce war materials or something to invade countries)
+        // 6. synthesizing chemicals
     ],
     gameLogic: (game: Game) => {
         return mainLogic(game);
@@ -555,6 +568,20 @@ function mainLogic(game: Game) {
             up1t("spice_farm", -halflife700(dead_farms), "died");
             up1t("water", -(paid_farms * 40_00), "spice farms");
             up1t("spice", paid_farms, "spice farms");
+        }
+
+        {
+            const live_miner_count = bal.spice_miner;
+            const required_gold = live_miner_count;
+            const available_gold = Math.floor(bal.gold / 100_00);
+            const dead_miners = Math.min(
+                available_gold - required_gold,
+                0,
+            );
+            const paid_miners = live_miner_count - dead_miners;
+            up1t("spice_miner", -halflife700(dead_miners), "resigned");
+            up1t("gold", -(paid_miners * 100_00), "spice miners");
+            up1t("spice", paid_miners * bal.spice_mine, "spice miners × spice mines");
         }
     }
 }
