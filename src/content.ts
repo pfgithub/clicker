@@ -29,7 +29,7 @@ ideas:
 */
 const gameContent: GameContent = {
     counterConfig: {
-        tick: { displayMode: "hidden" },
+        tick: { displayMode: "integer", title: "tick" },
         tick_add: { displayMode: "integer", title: "tick" },
         _prev_stamina: {displayMode: "hidden"},
         stamina: { initialValue: 100, displayMode: "percentage", unlockHidden: true }, // 100%, 50%
@@ -89,9 +89,11 @@ const gameContent: GameContent = {
         // - count for every pixel scrolled on the page
         // - count number of clicks
         // - ice : earlygame cheaper than water but it takes a really long time to melt (realllyyyy long like hours long)
+        // - corruption: buttons to delete corruption with no effects. corruption is bad, you cant buy stuff or smth
 
         spice: {displayMode: "traditional", title: "spice", displaySuffix: "味"},
         spice_bush: {displayMode: "traditional", title: "spice bush"},
+        spice_farm: {displayMode: "traditional", title: "spice farm"},
 
         _ach_1: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
         _ach_2: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
@@ -142,7 +144,7 @@ const gameContent: GameContent = {
             effects: { achievement: 1, goop: 1_000_00 },
         }),
         ["separator"],
-        counter("stamina", "stamina increases {stamina|1} per {tick}, max {stamina|100}"), // revealcondition: stamina < 10% (don't show stamina until you run out)
+        counter("stamina", "stamina increases {stamina|1} per tick, max {stamina|100}"), // revealcondition: stamina < 10% (don't show stamina until you run out)
         button("work", {
             requires: {achievement: 1},
             effects: {tick_add: game => (game.money.achievement ?? 0)}, // CONSIDER: effects: (game => {tick_add: game.bal.achievement}), uncover_with: "achievement"
@@ -346,21 +348,27 @@ const gameContent: GameContent = {
         }),
 
         ["spacer"],
-        counter("spice", "amount of spice you have"),
-        counter("spice_bush", "number of spice bushes you have. each spice bush uses {water|20_00} {water} and {mosh_spore_0|1} {mosh_spore_0} each {tick} to stay alive. each bush increases the number of spices recieved when picking spices"),
 
         // 1. picking from the spice bush
+        counter("spice", "amount of spice you have"),
         button("pick spices", {
             requires: {spice_bush: 1},
             price: {stamina: 2},
             effects: {spice: game => game.money.spice_bush},
         }),
+        counter("spice_bush", "number of spice bushes you have. each spice bush uses {water|20_00} {water} each tick to stay alive. each bush increases the number of spices recieved when picking spices"),
         button("transplant bush", {
             price: {mosh_shop_access: 1, mosh_spore_0: game => exponential(200_000_00, 1.1, game.money.spice_bush), stamina: 120},
             effects: {spice_bush: 1},
         }),
 
         // 2. growing farms
+
+        counter("spice_farm", "number of spice farms you have. each spice farm uses {water|40_00} {water} each tick to stay alive. each farm produces {spice|1} {spice} per tick."),
+        button("lay farm", {
+            price: {mosh_shop_access: 1, spice: game => exponential(500, 1.1, game.money.spice_farm)},
+            effects: {spice_farm: 1},
+        }),
         // 3. spice mine
         // 4. invading countries (little mini-loop, you have to produce war materials or something to invade countries)
         // 5. synthesizing chemicals
@@ -522,20 +530,32 @@ function mainLogic(game: Game) {
             up10t("stamina", buycount, "water wheel ×10");
         }
 
-        const live_bush_count = bal.spice_bush;
-        const required_water = live_bush_count;
-        const required_mosh_spore_0 = live_bush_count;
-        const available_water = Math.floor(bal.water / 20_00);
-        const available_mosh_spore_0 = bal.mosh_spore_0;
-        const dead_bushes = Math.min(
-            available_water - required_water, // 100 - 
-            available_mosh_spore_0 - required_mosh_spore_0,
-            0,
-        );
-        const paid_bushes = live_bush_count - dead_bushes;
-        up1t("spice_bush", -halflife70(dead_bushes), "died");
-        up1t("mosh_spore_0", -paid_bushes, "spice bushes");
-        up1t("water", -(paid_bushes * 20_00), "spice bushes");
+        {
+            const live_bush_count = bal.spice_bush;
+            const required_water = live_bush_count;
+            const available_water = Math.floor(bal.water / 20_00);
+            const dead_bushes = Math.min(
+                available_water - required_water, // 100 - 
+                0,
+            );
+            const paid_bushes = live_bush_count - dead_bushes;
+            up1t("spice_bush", -halflife700(dead_bushes), "died");
+            up1t("water", -(paid_bushes * 20_00), "spice bushes");
+        }
+
+        {
+            const live_farm_count = bal.spice_farm;
+            const required_water = live_farm_count;
+            const available_water = Math.floor(bal.water / 40_00);
+            const dead_farms = Math.min(
+                available_water - required_water,
+                0,
+            );
+            const paid_farms = live_farm_count - dead_farms;
+            up1t("spice_farm", -halflife700(dead_farms), "died");
+            up1t("water", -(paid_farms * 40_00), "spice farms");
+            up1t("spice", paid_farms, "spice farms");
+        }
     }
 }
 
