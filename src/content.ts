@@ -527,7 +527,7 @@ function mainLogic(game: Game) {
                 water_wheel_10s,
                 200 - bal.stamina,
             );
-            up10t("stamina", buycount, "water wheel ×10");
+            up1t("stamina", buycount, "water wheel ×10");
         }
 
         {
