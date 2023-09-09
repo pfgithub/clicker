@@ -361,8 +361,9 @@ const gameContent: GameContent = {
         }),
 
         // 2. growing farms
-        // 3. invading countries (little mini-loop, you have to produce war materials or something to invade countries)
-        // 4. synthesizing chemicals
+        // 3. spice mine
+        // 4. invading countries (little mini-loop, you have to produce war materials or something to invade countries)
+        // 5. synthesizing chemicals
     ],
     gameLogic: (game: Game) => {
         return mainLogic(game);
