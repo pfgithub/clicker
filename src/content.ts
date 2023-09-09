@@ -504,12 +504,21 @@ function mainLogic(game: Game) {
             up1t("rot", buycount, "composter");
             up1t("air_pollution", 1, "composter");
         }
-        if(bal.water_wheel > 0 && bal.tick % 10 === 0 && bal.stamina < 200) {
+        const water_wheel_10s = Math.floor(bal.water_wheel / 10);
+        const water_wheel_1s = bal.water_wheel % 10;
+        if(water_wheel_1s > 0 && bal.tick % 10 === 0 && bal.stamina < 200) {
             const buycount = Math.min(
-                Math.floor(bal.water_wheel / 1),
+                water_wheel_1s,
                 200 - bal.stamina,
             );
             up10t("stamina", buycount, "water wheel");
+        }
+        if(water_wheel_10s > 0 && bal.stamina < 200) {
+            const buycount = Math.min(
+                water_wheel_10s,
+                200 - bal.stamina,
+            );
+            up10t("stamina", buycount, "water wheel ×10");
         }
 
         const live_bush_count = bal.spice_bush;
