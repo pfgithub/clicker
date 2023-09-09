@@ -397,13 +397,13 @@ export function numberFormat(game: Game, currency: string, n: number, showSign: 
         const div_val = 10 ** (log_val_div * 3);
         const res_val = n / div_val;
         const numbers = ["", "k", "m", "b", "t", "q", "Q", "s", "S", "o", "n", "d", "ud", "dd", "td", "qd"];
-        return res_val.toFixed(decimals) + (numbers[log_val_div] ?? "e"+(div_val * 3));
+        return prefix + res_val.toFixed(decimals) + (numbers[log_val_div] ?? "e"+(div_val * 3)) + suffix;
     }
     if(displayMode === "scientific") {
-        return n.toExponential(2);
+        return prefix + n.toExponential(2) + suffix;
     }
     if(displayMode === "logarithmic") {
-        return Math.log10(n).toFixed(2);
+        return prefix + Math.log10(n).toFixed(2) + suffix;
     }
     if (displayMode === "error") {
         return "ERR«"+currency+"»";
