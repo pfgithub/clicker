@@ -388,11 +388,16 @@ export function numberFormat(game: Game, currency: string, n: number, showSign: 
         return "Oops! You should never see this!";
     }
     if (displayMode === "traditional") {
-        const log_val = Math.floor(Math.log10(n) / 3);
-        const div_val = 10 ** (log_val * 3);
+        let log_val = Math.floor(Math.log10(n));
+        if(log_val < 0) log_val = 0;
+        let log_val_div = Math.floor(log_val / 3);
+        let log_val_mod = log_val % 3;
+				let decimals = 2 - log_val_mod;
+        if(log_val_div === 0) decimals = 0;
+        const div_val = 10 ** (log_val_div * 3);
         const res_val = n / div_val;
-        const numbers: string[] = ["", "k", "m", "b", "t", "q", "Q", "s", "S", "o", "n", "d", "ud", "dd", "td", "qd"];
-        return res_val.toFixed(2) + (numbers[log_val] ?? "e"+(div_val * 3));
+        const numbers = ["", "k", "m", "b", "t", "q", "Q", "s", "S", "o", "n", "d", "ud", "dd", "td", "qd"];
+        return res_val.toFixed(decimals) + (numbers[log_val_div] ?? "e"+(div_val * 3));
     }
     if(displayMode === "scientific") {
         return n.toExponential(2);

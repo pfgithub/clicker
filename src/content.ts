@@ -340,6 +340,10 @@ const gameContent: GameContent = {
             price: {mosh_shop_access: 1, credit: 1_000_000},
             effects: {merchant: 100_000},
         }),
+        button("sell farmer's market", {
+            price: {merchant: 50_000},
+            action: "destructive",
+        }),
 
         ["spacer"],
         counter("spice", "amount of spice you have"),
