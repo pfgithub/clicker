@@ -173,7 +173,7 @@ function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
     const justEffects = Object.entries(entry.effects || {});
 
     return <>
-        <button class={(pointer_coarse() ? "py-2" : "" )+ " px-2 block w-full text-left "+(getUncovered() ? "disabled:opacity-100 " : "disabled:opacity-50 ") + (checkPurchasable() ? "hover:bg-gray-200 focus:bg-gray-200 active:bg-gray-300" : "")} disabled={!checkPurchasable()} onClick={(e) => {
+        <button class={(pointer_coarse() ? "py-2" : "" )+ " px-2 group block w-full text-left "+(getUncovered() ? "disabled:opacity-100 " : "disabled:opacity-50 ") + (checkPurchasable() ? "hover:bg-gray-200 focus:bg-gray-200 active:bg-gray-300" : "")} disabled={!checkPurchasable()} onClick={(e) => {
             if(core.purchase(entry)) {
                 if(e.clientX) spawnParticle(e.clientX, e.clientY, "+");
                 else {
@@ -184,7 +184,7 @@ function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
                 }
             }
         }}>
-            <span class={(getUncovered() ? "font-bold " : "")+(checkPurchasable() ? " "+(entry.action === "destructive" ? "hover:underline text-red-600" : "underline text-blue-600") : "")}>
+            <span class={(getUncovered() ? "font-bold " : "")+(checkPurchasable() ? " "+(entry.action === "destructive" ? "group-hover:underline text-red-600" : "underline text-blue-600") : "")}>
                 {!getUncovered() ? "locked" : entry.name}
             </span>
             <Show when={requires.length > 0}>
