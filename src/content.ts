@@ -342,7 +342,7 @@ const gameContent: GameContent = {
             effects: {spice: game => game.money.spice_bush},
         }),
         button("transplant bush", {
-            price: {mosh_shop_access: 1, mosh_spore_0: game => exponential(2_000_00, 1.1, game.money.spice_bush), stamina: 120},
+            price: {mosh_shop_access: 1, mosh_spore_0: game => exponential(20_000_00, 1.1, game.money.spice_bush), stamina: 120},
             effects: {spice_bush: 1},
         }),
 
