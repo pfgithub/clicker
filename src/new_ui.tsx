@@ -184,7 +184,7 @@ function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
                 }
             }
         }}>
-            <span class={(getUncovered() ? "font-bold " : "")+(checkPurchasable() ? "underline "+(entry.action === "destructive" ? "text-red-600" : "text-blue-600") : "")}>
+            <span class={(getUncovered() ? "font-bold " : "")+(checkPurchasable() ? " "+(entry.action === "destructive" ? "hover:underline text-red-600" : "underline text-blue-600") : "")}>
                 {!getUncovered() ? "locked" : entry.name}
             </span>
             <Show when={requires.length > 0}>
