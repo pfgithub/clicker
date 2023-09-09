@@ -221,9 +221,11 @@ export function newCore(): GameCore {
             ];
 
             before_next_tick.push(() => {
+                game.money.tick += 1; // hack; tick should be added before this is called but it isn't
                 for (let [key, value] of effects) {
                     addMoney(game, key, priceget(game, value), 1, "purchase");
                 }
+                game.money.tick -= 1;
             });
 
             purchased_this_tick = true;
