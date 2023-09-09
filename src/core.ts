@@ -388,6 +388,10 @@ export function numberFormat(game: Game, currency: string, n: number, showSign: 
         return "Oops! You should never see this!";
     }
     if (displayMode === "traditional") {
+        if(n < 0) {
+            prefix = "-" + prefix;
+            n = Math.abs(n);
+        }
         let log_val = Math.floor(Math.log10(n));
         if(log_val < 0) log_val = 0;
         let log_val_div = Math.floor(log_val / 3);
@@ -403,6 +407,10 @@ export function numberFormat(game: Game, currency: string, n: number, showSign: 
         return prefix + n.toExponential(2) + suffix;
     }
     if(displayMode === "logarithmic") {
+        if(n < 0) {
+            prefix = "-" + prefix;
+            n = Math.abs(n);
+        }
         return prefix + Math.log10(n).toFixed(2) + suffix;
     }
     if (displayMode === "error") {
