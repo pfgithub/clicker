@@ -10,7 +10,7 @@ function button(
         effects?: Price;
         requires?: Price;
         uncover_with?: string,
-        action?: "destructive",
+        style?: "destructive",
     },
 ): GameConfigurationItem {
     return ["button", { name, ...details }];
@@ -115,6 +115,37 @@ const gameContent: GameContent = {
         _ach_8: { initialValue: 1, displayMode: "inverse_boolean", unlockHidden: true },
     },
     gameConfig: [
+        // SETTINGS:
+        // save game (last saved)
+        // reset game (confirm)
+        // button("pause game", {
+        //     price: {_settings_game_playing: 1},
+        //     effects: {_settings_game_paused: 1},
+        //     action: "pause_game",
+        // }),
+        // button("resume game", {
+        //     price: {_settings_game_paused: 1},
+        //     effects: {_settings_game_playing: 1},
+        // }),
+        // button("step one tick", {
+        //     effects: {_settings_step_tick: 1},
+        //     action: "step_one_tick",
+        // }),
+        // ["spacer"],
+        // button("reset game", {
+        //     price: {_settings_}
+        //     effects: {_settings_reset_confirm: 1},
+        //     style: "destructive",
+        // }),
+        // button("confirm reset", {
+        //     style: "destructive",
+        //     price: {_settings_reset_confirm: 1},
+        //     action: "reset_game",
+        // }),
+        // button("cancel reset", {
+        //     price: {confir}
+        // }),
+        // ["separator"],
         counter("achievement", "number of achievements you have recieved. each achievement makes work stronger."),
         button("collect 100 gold", {
             requires: { gold: 100_00 },
@@ -218,7 +249,7 @@ const gameContent: GameContent = {
         }),
         button("fire merchant", {
             price: {merchant: 1, gold: 10_000},
-            action: "destructive",
+            style: "destructive",
         }),
         counter("sprinkler", "each sprinkler automatically buys {water|20_000} water for {credit|1} credit every 10 ticks."),
         button("buy sprinkler", {
@@ -228,7 +259,7 @@ const gameContent: GameContent = {
         button("sell sprinkler", {
             price: {sprinkler: 1},
             effects: {credit: 80},
-            action: "destructive",
+            style: "destructive",
         }),
         ["spacer"],
         button("buy seed bundle", {
@@ -334,7 +365,7 @@ const gameContent: GameContent = {
         }),
         button("sell bunsen burner", {
             price: {bunsen_burner: 1},
-            action: "destructive",
+            style: "destructive",
         }),
         button("purchase composter", {
             price: {mosh_shop_access: 1, gold: 10_000_00},
@@ -342,7 +373,7 @@ const gameContent: GameContent = {
         }),
         button("sell composter", {
             price: {composter: 1},
-            action: "destructive",
+            style: "destructive",
         }),
         button("purchase water wheel", {
             price: {mosh_shop_access: 1, apple: 100_000},
@@ -354,7 +385,7 @@ const gameContent: GameContent = {
         }),
         button("sell farmer's market", {
             price: {merchant: 50_000},
-            action: "destructive",
+            style: "destructive",
         }),
 
         ["spacer"],

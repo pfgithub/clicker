@@ -19,6 +19,7 @@ export function App(core: GameCore): JSX.Element {
 
     return <sjs_context.Provider value={ticked}>
         {untrack(() => AppMain(core))}
+        <div style="margin-bottom: 50vh;" />
     </sjs_context.Provider>;
 }
 function AppMain(core: GameCore): JSX.Element {
@@ -77,7 +78,7 @@ function AppMain(core: GameCore): JSX.Element {
             </div>
             <div class="h-full overflow-y-scroll p-2 pb-[50%]" ref={split_1}>
                 {sections.map(segment => (
-                    segment.right.map(item => untrack(() => Segment(core, item)))
+                    (segment.single ? segment.left : segment.right).map(item => untrack(() => Segment(core, item)))
                 ))}
             </div>
         </div>;
@@ -185,7 +186,7 @@ function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
                 }
             }
         }}>
-            <span class={(getUncovered() ? "font-bold " : "")+(checkPurchasable() ? " "+(entry.action === "destructive" ? "group-hover:underline text-red-600" : "underline text-blue-600") : "")}>
+            <span class={(getUncovered() ? "font-bold " : "")+(checkPurchasable() ? " "+(entry.style === "destructive" ? "group-hover:underline text-red-600" : "underline text-blue-600") : "")}>
                 {!getUncovered() ? "locked" : entry.name}
             </span>
             <Show when={requires.length > 0}>

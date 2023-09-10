@@ -28,7 +28,7 @@ export type ManualButtonDetails = {
     requires?: Price;
     name: string;
     uncover_with?: string;
-    action?: "destructive",
+    style?: "destructive",
 };
 export type ButtonDetails = ManualButtonDetails & {
     // id: string & { __unique: true };
