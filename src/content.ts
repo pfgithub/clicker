@@ -387,6 +387,14 @@ const gameContent: GameContent = {
             price: {merchant: 50_000},
             style: "destructive",
         }),
+        button("purchase international sprinkler convention", {
+            price: {mosh_shop_access: 1, spice: 10_000, mosh_spore_0: 100_000_00},
+            effects: {sprinkler: 100_000},
+        }),
+        button("sell farmer's market", {
+            price: {merchant: 50_000},
+            style: "destructive",
+        }),
 
         ["spacer"],
 
@@ -560,6 +568,7 @@ function mainLogic(game: Game) {
                 Math.floor(bal.composter / 1),
             );
             up1t("apple", -(buycount * 100_000), "composter");
+            up1t("rot", buycount, "composter");
             up1t("air_pollution", 1, "composter");
         }
         const water_wheel_10s = Math.floor(bal.water_wheel / 10);
@@ -626,13 +635,17 @@ function killer(game: Game, opts: {
 
     let dead_count = 0;
     for(const [item, cost] of Object.entries(opts.price)) {
-        const can_pay_for = Math.floor(game.money[item] / cost);
+        let can_pay_for = Math.floor(game.money[item] / cost);
+        if(can_pay_for < 0) can_pay_for = 0; // oops, shouldn't happen
 
         dead_count = Math.max(dead_count, live_item_count - can_pay_for);
     }
     if(dead_count > live_item_count) {
         // ???? should not be possible
         dead_count = live_item_count;
+        console.log(dead_count, live_item_count, Object.entries(opts.price).map(([k, v]) => {
+            return [k, v, game.money[k], Math.floor(game.money[k] / v)];
+        }));
         alert("error; dead count > live_item_count");
     }
 
