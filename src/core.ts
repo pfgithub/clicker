@@ -58,7 +58,7 @@ export function newCore(): GameCore {
 
     let game: Game = {
         tick: 0,
-        money: {},
+        money: {}, // = proxy (set v => if it's null then error)
         counterConfig: {},
         moneyTransfer: {},
         uncoveredCounters: {},
@@ -439,6 +439,9 @@ export function getCounterChange(game: Game, currency: string): {
 }
 
 export function addMoney(game: Game, name: string, count: number, period: number, reason: string): void {
+    if(!Number.isInteger(count)) {
+        alert("not integer "+count+" ("+name+" += "+count+" over " +period +" for " +reason+")");
+    }
     game.money[name] += count;
     const moneytransfer = (game.moneyTransfer[name] ??= {});
     if(moneytransfer[reason]?.lastSet === game.money.tick && moneytransfer[reason]?.frequency === period) {

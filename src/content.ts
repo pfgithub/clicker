@@ -22,6 +22,14 @@ function exponential(initial_value: number, multiply: number, balance: number): 
     return Math.floor(res);
 }
 
+const hlc = (num: number, hl: number) => Math.ceil(num * hl);
+const halflife700 = (num: number): number => {
+    return hlc(num, 1 / 1000);
+};
+const halflife70 = (num: number): number => {
+    return hlc(num, 1 / 100);
+};
+
 /*
 ideas:
 - tick. a button that lets you purchase a tick (1× tick)
@@ -385,6 +393,12 @@ const gameContent: GameContent = {
         // 4. spice potening factory
         // 5. invading countries (little mini-loop, you have to produce war materials or something to invade countries)
         // 6. synthesizing chemicals
+
+        // we're trying to do traditional idle game and it's not working
+        // also we can do traditional idle game without exponential prices:
+        // - markets -> something more powerful than them but more expensive -> ...
+        // the only critical thing is having no "buy all" button because then there's no point to ever
+        // upgrade
     ],
     gameLogic: (game: Game) => {
         return mainLogic(game);
@@ -471,14 +485,6 @@ function mainLogic(game: Game) {
             up10t("ceo apples", buycount * 2, "merchant"); // ceo takes 2 apples from every merchant sell
         }
 
-        const hlc = (num: number, hl: number) => Math.ceil(num * hl);
-        const halflife700 = (num: number): number => {
-            return hlc(num, 1 / 1000);
-        };
-        const halflife70 = (num: number): number => {
-            return hlc(num, 1 / 100);
-        };
-
         if(bal.mud > 0) {
             const diff = halflife70(bal.mud);
             up1t("mud", -diff, "mud decay");
@@ -513,7 +519,7 @@ function mainLogic(game: Game) {
                 Math.floor(bal.bunsen_burner / 1),
             );
             up1t("spore_catalyst", -buycount, "bunsen burner");
-            up1t("mosh_spore_0", -buycount * 100, "bunsen burner");
+            up1t("mosh_spore_0", -buycount * 1_000_00, "bunsen burner");
             up1t("mosh_spore", buycount, "bunsen burner");
             up1t("air_pollution", 1, "bunsen burner");
         }
@@ -522,8 +528,7 @@ function mainLogic(game: Game) {
                 Math.floor(bal.apple / 100_000),
                 Math.floor(bal.composter / 1),
             );
-            up1t("apple", -buycount, "composter");
-            up1t("rot", buycount, "composter");
+            up1t("apple", -(buycount * 100_000), "composter");
             up1t("air_pollution", 1, "composter");
         }
         const water_wheel_10s = Math.floor(bal.water_wheel / 10);
@@ -543,48 +548,77 @@ function mainLogic(game: Game) {
             up1t("stamina", buycount, "water wheel ×10");
         }
 
-        {
-            const live_bush_count = bal.spice_bush;
-            const required_water = live_bush_count;
-            const available_water = Math.floor(bal.water / 20_00);
-            const dead_bushes = Math.min(
-                available_water - required_water, // 100 - 
-                0,
-            );
-            const paid_bushes = live_bush_count - dead_bushes;
-            up1t("spice_bush", -halflife700(dead_bushes), "died");
-            up1t("water", -(paid_bushes * 20_00), "spice bushes");
-        }
+        killer(game, {
+            producer: "spice_bush",
+            period: 1,
+            price: {water: 20_00},
+            effects: {},
+            reason: "spice bushes",
+            die_reason: "died",
+        });
 
-        {
-            const live_farm_count = bal.spice_farm;
-            const required_water = live_farm_count;
-            const available_water = Math.floor(bal.water / 40_00);
-            const dead_farms = Math.min(
-                available_water - required_water,
-                0,
-            );
-            const paid_farms = live_farm_count - dead_farms;
-            up1t("spice_farm", -halflife700(dead_farms), "died");
-            up1t("water", -(paid_farms * 40_00), "spice farms");
-            up1t("spice", paid_farms, "spice farms");
-        }
+        killer(game, {
+            producer: "spice_farm",
+            period: 1,
+            price: {water: 40_00},
+            effects: {spice: 1},
+            reason: "spice farms",
+            die_reason: "dried up",
+        });
 
-        {
-            const live_miner_count = bal.spice_miner;
-            const required_gold = live_miner_count;
-            const available_gold = Math.floor(bal.gold / 100_00);
-            const dead_miners = Math.min(
-                available_gold - required_gold,
-                0,
-            );
-            const paid_miners = live_miner_count - dead_miners;
-            up1t("spice_miner", -halflife700(dead_miners), "resigned");
-            up1t("gold", -(paid_miners * 100_00), "spice miners");
-            up1t("spice", paid_miners * bal.spice_mine, "spice miners × spice mines");
-        }
+        killer(game, {
+            producer: "spice_miner",
+            period: 1,
+            price: {gold: 100_00},
+            effects: {spice: bal.spice_mine},
+
+            reason: "spice miners mining",
+            die_reason: "resigned",
+        });
     }
 }
 
 export default gameContent;
 export let { counterConfig, gameConfig, gameLogic } = gameContent;
+
+function killer(game: Game, opts: {
+    producer: string,
+    period: number,
+    price: {[key: string]: number},
+    effects: {[key: string]: number},
+    die_reason: string,
+    reason: string,
+}): void {
+    const live_item_count = game.money[opts.producer];
+
+    type RequiredAvailable = {
+        item: string,
+        required_1: number,
+        available_1: number,
+        scale: number,
+    };
+
+    let dead_count = 0;
+    const required_available: RequiredAvailable[] = [];
+    for(const [item, cost] of Object.entries(opts.price)) {
+        const ra: RequiredAvailable = {
+            item: item,
+            required_1: live_item_count,
+            available_1: Math.floor(game.money[item] / cost),
+            scale: cost,
+        };
+        required_available.push(ra);
+
+        dead_count = Math.max(dead_count, ra.required_1 - ra.available_1);
+    }
+
+    // pay
+    const paid_count = live_item_count - dead_count;
+    addMoney(game, opts.producer, -halflife700(dead_count), opts.period, opts.die_reason);
+    for(const item of required_available) {
+        addMoney(game, item.item, -(paid_count * item.scale), opts.period, opts.reason);
+    }
+    for(const [item, scale] of Object.entries(opts.effects)) {
+        addMoney(game, item, paid_count * scale, opts.period, opts.reason);
+    }
+}
