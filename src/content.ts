@@ -612,6 +612,8 @@ function mainLogic(game: Game) {
 export default gameContent;
 export let { counterConfig, gameConfig, gameLogic } = gameContent;
 
+// there is a bug
+// spice bushes went negative
 function killer(game: Game, opts: {
     producer: string,
     period: number,
@@ -622,32 +624,27 @@ function killer(game: Game, opts: {
 }): void {
     const live_item_count = game.money[opts.producer];
 
-    type RequiredAvailable = {
-        item: string,
-        required_1: number,
-        available_1: number,
-        scale: number,
-    };
-
     let dead_count = 0;
-    const required_available: RequiredAvailable[] = [];
     for(const [item, cost] of Object.entries(opts.price)) {
-        const ra: RequiredAvailable = {
-            item: item,
-            required_1: live_item_count,
-            available_1: Math.floor(game.money[item] / cost),
-            scale: cost,
-        };
-        required_available.push(ra);
+        const can_pay_for = Math.floor(game.money[item] / cost);
 
-        dead_count = Math.max(dead_count, ra.required_1 - ra.available_1);
+        dead_count = Math.max(dead_count, live_item_count - can_pay_for);
+    }
+    if(dead_count > live_item_count) {
+        // ???? should not be possible
+        dead_count = live_item_count;
+        alert("error; dead count > live_item_count");
     }
 
     // pay
     const paid_count = live_item_count - dead_count;
-    addMoney(game, opts.producer, -halflife700(dead_count), opts.period, opts.die_reason);
-    for(const item of required_available) {
-        addMoney(game, item.item, -(paid_count * item.scale), opts.period, opts.reason);
+    const kill_this_tick = halflife700(dead_count);
+    if(kill_this_tick !== 0) {
+        console.log(kill_this_tick, paid_count, live_item_count, opts);
+    }
+    addMoney(game, opts.producer, -kill_this_tick, opts.period, opts.die_reason);
+    for(const [item, scale] of Object.entries(opts.price)) {
+        addMoney(game, item, -(paid_count * scale), opts.period, opts.reason);
     }
     for(const [item, scale] of Object.entries(opts.effects)) {
         addMoney(game, item, paid_count * scale, opts.period, opts.reason);

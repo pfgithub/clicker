@@ -388,6 +388,9 @@ export function numberFormat(game: Game, currency: string, n: number, showSign: 
         return "Oops! You should never see this!";
     }
     if (displayMode === "traditional") {
+        if(n > 0 && showSign) {
+            prefix = "+" + prefix;
+        }
         if(n < 0) {
             prefix = "-" + prefix;
             n = Math.abs(n);
