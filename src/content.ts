@@ -391,8 +391,8 @@ const gameContent: GameContent = {
             price: {mosh_shop_access: 1, spice: 10_000, mosh_spore_0: 100_000_00},
             effects: {sprinkler: 100_000},
         }),
-        button("sell farmer's market", {
-            price: {merchant: 50_000},
+        button("sell sprinkler's convention", {
+            price: {sprinkler: 50_000},
             style: "destructive",
         }),
 
