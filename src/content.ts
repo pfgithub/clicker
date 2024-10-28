@@ -384,7 +384,7 @@ const gameContent: GameContent = {
             effects: {water_wheel: 1},
         }),
         button("purchase farmer's market", {
-            price: {mosh_shop_access: 1, credit: 1_000_000},
+            price: {mosh_shop_access: 1, spice: 10_000, mosh_spore_0: 100_000_00},
             effects: {merchant: 100_000},
         }),
         button("sell farmer's market", {
