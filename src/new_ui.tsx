@@ -172,7 +172,7 @@ function BuyButton(core: GameCore, entry: ManualButtonDetails): JSX.Element {
 
     const requires = Object.entries(entry.requires || {});
     const justPrice = Object.entries(entry.price || {});
-    const justEffects = Object.entries(entry.effects || {});
+    const justEffects = Object.entries(entry.effects || {}).filter(fx => game().counterConfig[fx[0]].displayMode !== "hidden");
 
     return <>
         <button class={(pointer_coarse() ? "py-2" : "" )+ " px-2 group block w-full text-left "+(getUncovered() ? "disabled:opacity-100 " : "disabled:opacity-50 ") + (checkPurchasable() ? "hover:bg-gray-200 focus:bg-gray-200 active:bg-gray-300" : "")} disabled={!checkPurchasable()} onClick={(e) => {

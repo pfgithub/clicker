@@ -86,6 +86,9 @@ const gameContent: GameContent = {
         bunsen_burner: {displayMode: "integer", title: "bunsen burner"},
         composter: {displayMode: "integer"},
         water_wheel: {displayMode: "integer", title: "water wheel"},
+        goop_house: {displayMode: "integer", title: "goop house"},
+        house_goop_count: {displayMode: "integer", title: "housed goop"},
+        unhouse_goop_count: {displayMode: "hidden", title: "housed goop"},
 
         air_pollution: {displayMode: "hidden"},
 
@@ -102,6 +105,7 @@ const gameContent: GameContent = {
         spice: {displayMode: "traditional", title: "spice", displaySuffix: "味"},
         spice_bush: {displayMode: "traditional", title: "spice bush"},
         spice_farm: {displayMode: "traditional", title: "spice farm"},
+        spice_plantation: {displayMode: "traditional", title: "spice plantation"},
         spice_mine: {displayMode: "traditional", title: "spice mine"},
         spice_miner: {displayMode: "traditional", title: "spice miner"},
 
@@ -185,7 +189,7 @@ const gameContent: GameContent = {
             effects: { achievement: 1, goop: 1_000_00 },
         }),
         ["separator"],
-        counter("stamina", "stamina increases {stamina|1} per tick, max {stamina|100}"), // revealcondition: stamina < 10% (don't show stamina until you run out)
+        counter("stamina", "stamina increases {stamina|1} per tick up to {stamina|100}"), // revealcondition: stamina < 10% (don't show stamina until you run out)
         button("work", {
             requires: {achievement: 1},
             effects: {tick_add: game => (game.money.achievement ?? 0)}, // CONSIDER: effects: (game => {tick_add: game.bal.achievement}), uncover_with: "achievement"
@@ -395,6 +399,23 @@ const gameContent: GameContent = {
             price: {sprinkler: 50_000},
             style: "destructive",
         }),
+        counter("goop_house", "each {goop_house} makes house goop produce {goop|1000_00} more {goop}"),
+        button("purchase goop house", {
+            price: {mosh_shop_access: 1, spice: game => exponential(100, 2.0, game.money.goop_house)},
+            effects: {goop_house: 1},
+        }),
+        counter("house_goop_count", "each {house_goop_count} increases the {spice} cost of housing more goop"),
+        button("house goop", {
+            requires: {goop_house: 1},
+            price: {mosh_spore: 1, spice: game => exponential(100, 1.1, game.money.house_goop_count), stamina: 110},
+            effects: {goop: game => game.money.goop_house * 1000_00, house_goop_count: 1},
+        }),
+        button("unhouse goop", {
+            price: {mosh_shop_access: 1, house_goop_count: 1, spice: game => exponential(100, 1.1, game.money.unhouse_goop_count), stamina: 110},
+            effects: {unhouse_goop_count: 1},
+        }),
+        // reset housing costs button? would need confirmation because it would bring your mosh, goop, mash, mish, and catalysts back to 0 so you have to
+        // restart the whole goop thing but this time with some rot
 
         ["spacer"],
 
@@ -402,10 +423,10 @@ const gameContent: GameContent = {
         counter("spice", "amount of spice you have"),
         button("pick spices", {
             requires: {spice_bush: 1},
-            price: {stamina: 2},
+            price: {stamina: 5},
             effects: {spice: game => game.money.spice_bush},
         }),
-        counter("spice_bush", "number of spice bushes you have. each spice bush uses {water|20_00} {water} each tick to stay alive. each bush increases the number of spices recieved when picking spices"),
+        counter("spice_bush", "number of spice bushes you have. each spice bush uses {water|20_00} {water} each tick to stay alive. dead spice bushes compost into {rot|10_000} {rot}. each bush increases the number of spices recieved when picking spices"),
         button("transplant bush", {
             price: {mosh_shop_access: 1, mosh_spore_0: game => exponential(200_000_00, 1.1, game.money.spice_bush), stamina: 120},
             effects: {spice_bush: 1},
@@ -413,15 +434,21 @@ const gameContent: GameContent = {
 
         // 2. growing farms
 
-        counter("spice_farm", "number of spice farms you have. each spice farm uses {water|40_00} {water} each tick to stay alive. each farm produces {spice|1} {spice} per tick."),
+        counter("spice_farm", "number of spice farms you have. each spice farm uses {water|40_00} {water} each tick to stay alive. dead spice farms compost into {rot|100_000} {rot} {}. each farm produces {spice|1} {spice} per tick."),
         button("lay farm", {
-            price: {mosh_shop_access: 1, spice: game => exponential(5000, 1.1, game.money.spice_farm)},
+            price: {mosh_shop_access: 1, spice_bush: 1, spice: game => exponential(2000, 1.1, game.money.spice_farm)},
             effects: {spice_farm: 1},
+        }),
+        counter("spice_plantation", "number of spice plantations you have. each spice plantation uses {water|1_000_00} {water} each tick to stay alive. dead spice plantations compost into {rot|1_000_000} {rot} {}. each plantation produces {spice|10} {spice} per tick."),
+        button("upgrade farm", {
+            price: {mosh_shop_access: 1, spice_farm: 1, spice: game => exponential(10_000, 1.1, game.money.spice_plantation)},
+            effects: {spice_plantation: 1},
         }),
         // 3. spice mine (consider random cave-ins?)
         counter("spice_mine", "number of spice mines you have. each spice mine produces {spice|1} {spice} per {spice_miner}"),
         button("open mine", {
-            price: {gold: 2_000_000_00, mosh_spore_0: 100_000_00},
+            requires: {spice_miner: 1},
+            price: {mosh_shop_access: 1, gold: 2_000_000_00, mosh_spore_0: 100_000_00},
             effects: {spice_mine: 1},
         }),
         counter("spice_miner", "number of spice miners you have. each miner is paid {gold|100_00} {gold} per tick to stay employed"),
@@ -593,6 +620,7 @@ function mainLogic(game: Game) {
             period: 1,
             price: {water: 20_00},
             effects: {},
+            death_effects: {rot: 10_000},
             reason: "spice bushes",
             die_reason: "died",
         });
@@ -602,7 +630,18 @@ function mainLogic(game: Game) {
             period: 1,
             price: {water: 40_00},
             effects: {spice: 1},
+            death_effects: {rot: 100_000},
             reason: "spice farms",
+            die_reason: "dried up",
+        });
+
+        killer(game, {
+            producer: "spice_plantation",
+            period: 1,
+            price: {water: 1_000_00},
+            effects: {spice: 10},
+            death_effects: {rot: 1_000_000},
+            reason: "spice plantations",
             die_reason: "dried up",
         });
 
@@ -628,6 +667,7 @@ function killer(game: Game, opts: {
     period: number,
     price: {[key: string]: number},
     effects: {[key: string]: number},
+    death_effects?: {[key: string]: number},
     die_reason: string,
     reason: string,
 }): void {
@@ -661,5 +701,8 @@ function killer(game: Game, opts: {
     }
     for(const [item, scale] of Object.entries(opts.effects)) {
         addMoney(game, item, paid_count * scale, opts.period, opts.reason);
+    }
+    for(const [item, scale] of Object.entries(opts.death_effects ?? {})) {
+        addMoney(game, item, dead_count * scale, opts.period, opts.reason);
     }
 }
